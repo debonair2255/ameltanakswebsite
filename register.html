@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AMELTAN Registration</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #509C6F;
+      margin: 0;
+      padding: 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .logo, .mlscn {
+      width: 150px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ameltan-aks {
+      font-size: 30px;
+      color: #222;
+      margin-top: 10px;
+    }
+
+    .hamburger {
+      font-size: 40px;
+      cursor: pointer;
+    }
+
+    #menu.hidden {
+      display: none;
+    }
+
+    #menu {
+      position: sticky;
+      top: 0;
+      background-color: #819b8b;
+      z-index: 1000;
+      padding: 10px;
+    }
+
+    #menu ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    #menu li {
+      margin: 10px 0;
+    }
+
+    #menu a {
+      text-decoration: none;
+      color: blue;
+      font-size: 20px;
+    }
+
+    #menu a:hover {
+      color: #f3f3f3;
+    }
+
+    .regform {
+      font-size: 40px;
+      color: antiquewhite;
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    form {
+      background-color: whitesmoke;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-size: 20px;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      width: 100%;
+      background-color: #3C94BC;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      border-radius: 8px;
+    }
+
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+
+    .success {
+      color: green;
+      margin-top: 10px;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #007BFF;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #menu a {
+  text-decoration: none;
+  color: blue;
+  font-size: 20px;
+  position: relative;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+#menu a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0%;
+  height: 2px;
+  background-color: #f3f3f3;
+  transition: width 0.3s ease;
+}
+
+#menu a:hover {
+  color: #f3f3f3;
+  transform: translateX(5px); /* subtle slide effect */
+}
+
+#menu a:hover::after {
+  width: 100%; /* underline grows smoothly */
+}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <img class="logo" src="ameltan.jpg" alt="AMELTAN Logo">
+    <img class="mlscn" src="mlscn.png" alt="MLSCN Logo">
+  </div>
+
+  <h1 class="ameltan-aks">
+    Association of Medical Laboratory Technician and Assistant Nigeria – Akwa Ibom State
+  </h1>
+
+  <div class="hamburger" onclick="toggleMenu()">☰</div>
+  <nav id="menu" class="hidden">
+    <ul>
+      <li><a href="home.html">Home</a></li>
+      <li><a href="aboutUs.html">About Us</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="register.html">Registration</a></li>
+    </ul>
+  </nav>
+</header>
+
+<h2 class="regform">AMELTAN REGISTRATION FORM</h2>
+
+<form id="userForm">
+  <label for="name">Name:</label>
+  <input type="text" id="name" placeholder="Enter your name" required>
+
+  <label for="age">Age:</label>
+  <input type="number" id="age" placeholder="Enter age e.g; 25" min="1" max="120" required>
+
+  <label for="email">Email:</label>
+  <input type="text" id="email" placeholder="Enter your email" required>
+
+  <label for="phone">Phone Number:</label>
+  <input type="text" id="phone" placeholder="0812345678" required>
+
+  <label for="qualification">Qualification Type:</label>
+  <input type="text" id="qualification" placeholder="Technician or Assistant" required pattern="Technician|Assistant">
+
+  <label for="regNumber">Registration Number:</label>
+  <input type="text" id="regNumber" placeholder="ABC/12345">
+
+  <button type="submit">Submit</button>
+  <div class="error" id="errorMsg"></div>
+  <div class="success" id="successMsg"></div>
+  <div id="spinner" class="spinner" style="display: none;"></div>
+</form>
+
+<script>
+  function toggleMenu() {
+    const menu = document.getElementById("menu");
+    menu.classList.toggle("hidden");
+  }
+
+  const form = document.getElementById('userForm');
+  const errorMsg = document.getElementById('errorMsg');
+  const successMsg = document.getElementById('successMsg');
+  const spinner = document.getElementById('spinner');
+
+  form.addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    let name = document.getElementById('name').value.trim();
+    let age = parseInt(document.getElementById('age').value, 10);
+
+    if (!name) {
+      errorMsg.textContent = "Please enter your name.";
+      return;
+    }
+
+    if (isNaN(age) || age < 1 || age > 120) {
+      errorMsg.textContent = "Please enter a valid age between 1 and 120.";
+      spinner.style.display = "none";
+      return;
+    }
+
+    errorMsg.textContent = "";
+    spinner.style.display = "block";
+
+    setTimeout(() => {
+      spinner.style.display = "none";
+      successMsg.textContent = "Registration successful!";
+      form.reset();
+    }, 2000);
+
+    setTimeout(() => {
+      window.location.href = "success.html";
+    }, 2000);
+  });
+</script>
+
+</body>
+</html>
