@@ -20,7 +20,7 @@ const Home = () => {
   ];
 
   return (
-    <main className="overflow-hidden">
+    <main className="w-full overflow-hidden">
 
       {/* =========================
           HERO
@@ -30,8 +30,8 @@ const Home = () => {
       {/* =========================
           INTRODUCTION
       ========================= */}
-      <section className="bg-white py-16 sm:py-20 lg:py-24">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+      <section className="w-full bg-white py-16 sm:py-20 lg:py-24">
+        <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
 
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
 
@@ -59,11 +59,11 @@ const Home = () => {
               </p>
             </div>
 
-            {/* RIGHT - HIGHLIGHT CARD */}
-            <div className="relative">
+            {/* RIGHT */}
+            <div className="w-full">
               <div className="rounded-2xl bg-ameltan-light p-6 sm:p-8 lg:p-10">
 
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-ameltan text-2xl text-white shadow-lg">
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-ameltan text-2xl font-bold text-white shadow-lg">
                   +
                 </div>
 
@@ -87,8 +87,8 @@ const Home = () => {
       {/* =========================
           OUR FOCUS
       ========================= */}
-      <section className="bg-ameltan-pale py-16 sm:py-20 lg:py-24">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+      <section className="w-full bg-ameltan-pale py-16 sm:py-20 lg:py-24">
+        <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
 
           {/* SECTION HEADER */}
           <div className="mx-auto max-w-2xl text-center">
@@ -109,25 +109,17 @@ const Home = () => {
           </div>
 
           {/* FEATURE CARDS */}
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
+          <div className="mt-12 grid w-full gap-6 md:grid-cols-3">
 
             {features.map((feature) => (
               <div
-                key={feature.number}
-                className="group rounded-2xl border border-gray-100 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-ameltan/20 hover:shadow-xl sm:p-8"
+                key={feature.title}
+                className="group w-full rounded-2xl border border-gray-100 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-ameltan/20 hover:shadow-xl sm:p-8"
               >
 
-                <div className="flex items-center justify-between">
+                <div className="h-px w-16 bg-gray-200 transition-all duration-300 group-hover:w-24 group-hover:bg-ameltan" />
 
-                  <span className="text-sm font-extrabold tracking-wider text-ameltan">
-                    {feature.number}
-                  </span>
-
-                  <div className="h-px w-16 bg-gray-200 transition-all duration-300 group-hover:w-24 group-hover:bg-ameltan" />
-
-                </div>
-
-                <h3 className="mt-8 text-xl font-bold text-gray-900">
+                <h3 className="mt-7 text-xl font-bold text-gray-900">
                   {feature.title}
                 </h3>
 
@@ -149,8 +141,8 @@ const Home = () => {
       {/* =========================
           CALL TO ACTION
       ========================= */}
-      <section className="bg-ameltan py-16 sm:py-20">
-        <div className="mx-auto max-w-5xl px-5 text-center sm:px-8">
+      <section className="w-full bg-ameltan py-16 sm:py-20">
+        <div className="mx-auto w-full max-w-5xl px-5 text-center sm:px-8">
 
           <h2 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
             Be part of a stronger professional community.

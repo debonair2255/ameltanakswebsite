@@ -3,13 +3,18 @@ import Footer from "./footer";
 
 const Layout = ({ children }) => {
   return (
-    <>
+    <div className="flex min-h-screen w-full flex-col">
+      {/* NAVBAR */}
       <Navbar />
-      <main style={{ padding: "40px 20px", minHeight: "80vh" }}>
+
+      {/* PAGE CONTENT */}
+      <main className="w-full flex-1">
         {children}
       </main>
+
+      {/* FOOTER */}
       <Footer />
-    </>
+    </div>
   );
 };
 

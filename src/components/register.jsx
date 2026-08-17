@@ -74,7 +74,6 @@ const Register = () => {
   // HANDLE MLT/MLA NUMBER
   // =========================
   const handleMltNumberChange = (e) => {
-    // Convert everything typed to uppercase
     const value = e.target.value.toUpperCase();
 
     /*
@@ -82,7 +81,7 @@ const Register = () => {
       - Maximum 3 capital letters
       - Followed by maximum 5 numbers
 
-      Examples while typing:
+      Examples:
       M
       ML
       MLT
@@ -92,6 +91,7 @@ const Register = () => {
       MLT1234
       MLT12345
     */
+
     if (/^[A-Z]{0,3}[0-9]{0,5}$/.test(value)) {
       setFormData((prev) => ({
         ...prev,
@@ -140,13 +140,17 @@ const Register = () => {
   };
 
   return (
-    <main className="min-h-screen bg-ameltan-pale px-5 py-12 sm:px-8 sm:py-16">
-      <div className="mx-auto max-w-6xl">
+    <main className="min-h-screen w-full bg-ameltan-pale px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+
+      {/* =========================
+          MAIN CONTAINER
+      ========================= */}
+      <div className="mx-auto w-full max-w-6xl">
 
         {/* =========================
             PAGE HEADER
         ========================= */}
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="w-full text-center">
 
           <span className="text-sm font-bold uppercase tracking-[0.2em] text-ameltan">
             Membership
@@ -156,27 +160,26 @@ const Register = () => {
             Create Your AMELTAN Account
           </h1>
 
-          <p className="mt-4 text-base leading-7 text-gray-600 sm:text-lg">
-            Join the professional community and gain access to
-            members-only resources and activities.
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-gray-600 sm:text-lg">
+            Join the professional community and gain access to members-only
+            resources and activities.
           </p>
 
         </div>
 
         {/* =========================
-            REGISTRATION CARD
+            REGISTRATION AREA
         ========================= */}
-        <div className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-2xl bg-white shadow-sm">
+        <div className="mx-auto mt-10 w-full bg-white">
 
-          {/* GREEN TOP BORDER */}
-          <div className="h-2 bg-ameltan" />
+          <div className="w-full p-6 sm:p-8 lg:p-12">
 
-          <div className="p-6 sm:p-8 lg:p-10">
-
-            {/* FORM TITLE */}
+            {/* =========================
+                FORM TITLE
+            ========================= */}
             <div className="mb-8">
 
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
                 Membership Registration
               </h2>
 
@@ -225,7 +228,7 @@ const Register = () => {
                   placeholder="Enter your full name"
                   required
                   autoComplete="name"
-                  className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                 />
 
               </div>
@@ -254,7 +257,7 @@ const Register = () => {
                     placeholder="you@example.com"
                     required
                     autoComplete="email"
-                    className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                   />
 
                 </div>
@@ -278,7 +281,7 @@ const Register = () => {
                     placeholder="08012345678"
                     required
                     autoComplete="tel"
-                    className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                   />
 
                 </div>
@@ -313,8 +316,12 @@ const Register = () => {
                     spellCheck="false"
                     pattern="^(MLT|MLA)[0-9]{5}$"
                     title="Enter your MLT/MLA number in the format MLT12345 or MLA12345"
-                    className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm font-semibold tracking-wide text-gray-900 outline-none transition placeholder:font-normal placeholder:tracking-normal placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-semibold tracking-wide text-gray-900 outline-none transition placeholder:font-normal placeholder:tracking-normal placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                   />
+
+                  <p className="mt-2 text-xs text-gray-500">
+                    Format: MLT12345 or MLA12345
+                  </p>
 
                 </div>
 
@@ -380,7 +387,7 @@ const Register = () => {
                     required
                     minLength={8}
                     autoComplete="new-password"
-                    className="w-full rounded-lg border border-gray-200 px-4 py-3 pr-20 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 pr-20 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                   />
 
                   <button
@@ -426,7 +433,7 @@ const Register = () => {
                     placeholder="Confirm your password"
                     required
                     autoComplete="new-password"
-                    className="w-full rounded-lg border border-gray-200 px-4 py-3 pr-20 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 pr-20 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                   />
 
                   <button
@@ -461,9 +468,9 @@ const Register = () => {
                   htmlFor="terms"
                   className="text-xs leading-5 text-gray-600 sm:text-sm"
                 >
-                  I confirm that the information provided is
-                  accurate and agree to the AMELTAN membership
-                  terms and conditions.
+                  I confirm that the information provided is accurate
+                  and agree to the AMELTAN membership terms and
+                  conditions.
                 </label>
 
               </div>
@@ -476,7 +483,9 @@ const Register = () => {
                 className="w-full rounded-lg bg-ameltan px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-ameltan-dark hover:shadow-md"
               >
                 Create Account
-                <span className="ml-2">→</span>
+                <span className="ml-2">
+                  →
+                </span>
               </button>
 
             </form>
@@ -506,7 +515,7 @@ const Register = () => {
         {/* =========================
             SECURITY NOTE
         ========================= */}
-        <div className="mx-auto mt-6 max-w-3xl text-center">
+        <div className="mx-auto mt-6 w-full max-w-6xl px-4 text-center">
 
           <p className="text-xs leading-5 text-gray-500">
             Your information should be kept secure and used only
@@ -516,6 +525,7 @@ const Register = () => {
         </div>
 
       </div>
+
     </main>
   );
 };
