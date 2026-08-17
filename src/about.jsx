@@ -66,7 +66,7 @@ const About = () => {
                 Who We Are
               </span>
 
-              <h2 className="mt-3 text-3xl font-extrabold leading-tight text-gray-900 sm:text-4xl lg:text-5xl">
+              <h2 className="mt-4 text-2xl font-bold text-gray-900 sm:text-3xl">
                 Supporting the people behind quality laboratory services.
               </h2>
 

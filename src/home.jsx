@@ -63,10 +63,6 @@ const Home = () => {
             <div className="w-full">
               <div className="rounded-2xl bg-ameltan-light p-6 sm:p-8 lg:p-10">
 
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-ameltan text-2xl font-bold text-white shadow-lg">
-                  +
-                </div>
-
                 <h3 className="mt-6 text-2xl font-bold text-gray-900">
                   Excellence in Laboratory Practice
                 </h3>
