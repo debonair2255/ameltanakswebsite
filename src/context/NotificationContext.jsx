@@ -1,67 +1,134 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-const NotificationContext = createContext();
+const NotificationContext = createContext(null);
+
+const STORAGE_KEY = "ameltan_notifications";
+
+const defaultNotifications = [
+  {
+    id: 1,
+    title: "Welcome to AMELTAN",
+    message:
+      "Your member dashboard is now available. Check your account for important updates.",
+    type: "announcement",
+    link: "/dashboard",
+    read: false,
+    createdAt: new Date().toISOString(),
+  },
+];
 
 export const NotificationProvider = ({ children }) => {
+  /* =========================
+      LOAD NOTIFICATIONS
+  ========================= */
   const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem("ameltan_notifications");
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
 
-    return saved
-      ? JSON.parse(saved)
-      : [
-          {
-            id: 1,
-            title: "Welcome to AMELTAN",
-            message:
-              "Your member dashboard is now available. Check your account for important updates.",
-            type: "announcement",
-            link: "/dashboard",
-            read: false,
-            createdAt: new Date().toISOString(),
-          },
-        ];
+      if (!saved) {
+        return defaultNotifications;
+      }
+
+      const parsed = JSON.parse(saved);
+
+      return Array.isArray(parsed) ? parsed : defaultNotifications;
+    } catch (error) {
+      console.error(
+        "Unable to load AMELTAN notifications:",
+        error
+      );
+
+      return defaultNotifications;
+    }
   });
 
-  // Save notifications
+  /* =========================
+      SAVE NOTIFICATIONS
+  ========================= */
   useEffect(() => {
-    localStorage.setItem(
-      "ameltan_notifications",
-      JSON.stringify(notifications)
-    );
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(notifications)
+      );
+    } catch (error) {
+      console.error(
+        "Unable to save AMELTAN notifications:",
+        error
+      );
+    }
   }, [notifications]);
 
-  // Number of unread notifications
-  const unreadCount = notifications.filter(
-    (notification) => !notification.read
-  ).length;
+  /* =========================
+      UNREAD COUNT
+  ========================= */
+  const unreadCount = useMemo(() => {
+    return notifications.filter(
+      (notification) => !notification.read
+    ).length;
+  }, [notifications]);
 
-  // Add new notification
-  const addNotification = (notification) => {
+  /* =========================
+      ADD NOTIFICATION
+  ========================= */
+  const addNotification = ({
+    title,
+    message,
+    type = "general",
+    link = "/dashboard",
+  }) => {
+    if (!title || !message) {
+      console.warn(
+        "A notification requires both a title and message."
+      );
+
+      return;
+    }
+
     const newNotification = {
-      id: Date.now(),
-      title: notification.title,
-      message: notification.message,
-      type: notification.type || "general",
-      link: notification.link || "/dashboard",
+      id: `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 9)}`,
+
+      title,
+      message,
+      type,
+      link,
       read: false,
       createdAt: new Date().toISOString(),
     };
 
-    setNotifications((prev) => [newNotification, ...prev]);
+    setNotifications((prev) => [
+      newNotification,
+      ...prev,
+    ]);
   };
 
-  // Mark one notification as read
+  /* =========================
+      MARK ONE AS READ
+  ========================= */
   const markAsRead = (id) => {
     setNotifications((prev) =>
       prev.map((notification) =>
         notification.id === id
-          ? { ...notification, read: true }
+          ? {
+              ...notification,
+              read: true,
+            }
           : notification
       )
     );
   };
 
-  // Mark everything as read
+  /* =========================
+      MARK ALL AS READ
+  ========================= */
   const markAllAsRead = () => {
     setNotifications((prev) =>
       prev.map((notification) => ({
@@ -71,29 +138,58 @@ export const NotificationProvider = ({ children }) => {
     );
   };
 
-  // Delete notification
+  /* =========================
+      REMOVE ONE
+  ========================= */
   const removeNotification = (id) => {
     setNotifications((prev) =>
-      prev.filter((notification) => notification.id !== id)
+      prev.filter(
+        (notification) => notification.id !== id
+      )
     );
   };
 
+  /* =========================
+      CLEAR ALL
+  ========================= */
+  const clearNotifications = () => {
+    setNotifications([]);
+  };
+
+  /* =========================
+      RESET NOTIFICATIONS
+  ========================= */
+  const resetNotifications = () => {
+    setNotifications(defaultNotifications);
+  };
+
+  /* =========================
+      CONTEXT VALUE
+  ========================= */
+  const value = {
+    notifications,
+    unreadCount,
+
+    addNotification,
+
+    markAsRead,
+    markAllAsRead,
+
+    removeNotification,
+    clearNotifications,
+    resetNotifications,
+  };
+
   return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        addNotification,
-        markAsRead,
-        markAllAsRead,
-        removeNotification,
-      }}
-    >
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );
 };
 
+/* =========================
+    CUSTOM HOOK
+========================= */
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
 

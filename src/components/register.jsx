@@ -1,244 +1,265 @@
+
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Register = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     email: "",
-    phone: "",
     mltNumber: "",
-    state: "",
     password: "",
     confirmPassword: "",
   });
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const states = [
-    "Abia",
-    "Adamawa",
-    "Akwa Ibom",
-    "Anambra",
-    "Bauchi",
-    "Bayelsa",
-    "Benue",
-    "Borno",
-    "Cross River",
-    "Delta",
-    "Ebonyi",
-    "Edo",
-    "Ekiti",
-    "Enugu",
-    "Gombe",
-    "Imo",
-    "Jigawa",
-    "Kaduna",
-    "Kano",
-    "Katsina",
-    "Kebbi",
-    "Kogi",
-    "Kwara",
-    "Lagos",
-    "Nasarawa",
-    "Niger",
-    "Ogun",
-    "Ondo",
-    "Osun",
-    "Oyo",
-    "Plateau",
-    "Rivers",
-    "Sokoto",
-    "Taraba",
-    "Yobe",
-    "Zamfara",
-    "FCT",
-  ];
-
-  // =========================
-  // HANDLE INPUT CHANGES
-  // =========================
+  /* =========================
+      HANDLE INPUT
+  ========================= */
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]:
+        name === "mltNumber"
+          ? value.toUpperCase()
+          : value,
     }));
 
     setError("");
+    setSuccess("");
   };
 
-  // =========================
-  // HANDLE MLT/MLA NUMBER
-  // =========================
-  const handleMltNumberChange = (e) => {
-    const value = e.target.value.toUpperCase();
-
-    /*
-      Allows only:
-      - Maximum 3 capital letters
-      - Followed by maximum 5 numbers
-
-      Examples:
-      M
-      ML
-      MLT
-      MLT1
-      MLT12
-      MLT123
-      MLT1234
-      MLT12345
-    */
-
-    if (/^[A-Z]{0,3}[0-9]{0,5}$/.test(value)) {
-      setFormData((prev) => ({
-        ...prev,
-        mltNumber: value,
-      }));
-
-      setError("");
-    }
-  };
-
-  // =========================
-  // FORM SUBMISSION
-  // =========================
-  const handleSubmit = (e) => {
+  /* =========================
+      HANDLE REGISTER
+  ========================= */
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Strict MLT/MLA format
-    const mltNumberPattern = /^(MLT|MLA)[0-9]{5}$/;
+    setError("");
+    setSuccess("");
 
-    // Validate MLT/MLA number
-    if (!mltNumberPattern.test(formData.mltNumber)) {
+    /* =========================
+        VALIDATION
+    ========================= */
+
+    if (
+      !formData.name.trim() ||
+      !formData.email.trim() ||
+      !formData.mltNumber.trim() ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
+    /* =========================
+        MLT NUMBER VALIDATION
+    ========================= */
+
+    const mltNumber = formData.mltNumber
+      .trim()
+      .toUpperCase();
+
+    if (!/^MLT\d{5}$/.test(mltNumber)) {
       setError(
-        "Invalid MLT/MLA number. Use exactly 3 capital letters followed by 5 numbers, for example MLT12345 or MLA12345."
+        "MLT/MLA number must be in the format MLT12345."
       );
       return;
     }
 
-    // Validate password
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    /* =========================
+        PASSWORD VALIDATION
+    ========================= */
+
+    if (formData.password.length < 6) {
+      setError(
+        "Password must be at least 6 characters long."
+      );
       return;
     }
 
-    // Confirm password
-    if (formData.password !== formData.confirmPassword) {
+    if (
+      formData.password !==
+      formData.confirmPassword
+    ) {
       setError("Passwords do not match.");
       return;
     }
 
-    // Temporary submission
-    console.log("Registration Data:", formData);
+    /* =========================
+        SEND TO BACKEND
+    ========================= */
 
-    alert(
-      "Registration form submitted successfully. Backend authentication will be connected later."
-    );
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/auth/register",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            name: formData.name.trim(),
+            email: formData.email.trim().toLowerCase(),
+            password: formData.password,
+            mltNumber,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      /* =========================
+          BACKEND ERROR
+      ========================= */
+
+      if (!response.ok) {
+        setError(
+          data.message ||
+            "Registration failed. Please try again."
+        );
+
+        return;
+      }
+
+      /* =========================
+          SUCCESS
+      ========================= */
+
+      setSuccess(
+        data.message ||
+          "Registration successful."
+      );
+
+      setFormData({
+        name: "",
+        email: "",
+        mltNumber: "",
+        password: "",
+        confirmPassword: "",
+      });
+
+      /* =========================
+          REDIRECT
+      ========================= */
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+    } catch (error) {
+      console.error(
+        "Registration error:",
+        error
+      );
+
+      setError(
+        "Unable to connect to the AMELTAN server. Please make sure the backend is running."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <main className="min-h-screen w-full bg-ameltan-pale px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+    <main className="min-h-screen bg-ameltan-pale px-5 py-12 sm:px-8 sm:py-16">
 
-      {/* =========================
-          MAIN CONTAINER
-      ========================= */}
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="mx-auto flex min-h-[80vh] max-w-6xl items-center justify-center">
 
-        {/* =========================
-            PAGE HEADER
-        ========================= */}
-        <div className="w-full text-center">
+        <div className="w-full max-w-md">
 
-          <span className="text-sm font-bold uppercase tracking-[0.2em] text-ameltan">
-            Membership
-          </span>
+          {/* =========================
+              HEADER
+          ========================= */}
 
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
-            Create Your AMELTAN Account
-          </h1>
+          <div className="text-center">
 
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-gray-600 sm:text-lg">
-            Join the professional community and gain access to members-only
-            resources and activities.
-          </p>
+            <span className="text-sm font-bold uppercase tracking-[0.2em] text-ameltan">
+              Membership
+            </span>
 
-        </div>
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              Create Your Account
+            </h1>
 
-        {/* =========================
-            REGISTRATION AREA
-        ========================= */}
-        <div className="mx-auto mt-10 w-full bg-white">
+            <p className="mt-3 text-sm leading-6 text-gray-600 sm:text-base">
+              Register as an AMELTAN member to access your account.
+            </p>
 
-          <div className="w-full p-6 sm:p-8 lg:p-12">
+          </div>
 
-            {/* =========================
-                FORM TITLE
-            ========================= */}
-            <div className="mb-8">
+          {/* =========================
+              CARD
+          ========================= */}
 
-              <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-                Membership Registration
-              </h2>
+          <div className="mt-8 overflow-hidden rounded-2xl bg-white shadow-sm">
 
-              <p className="mt-2 text-sm text-gray-500">
-                Please provide accurate information when creating your
-                account.
-              </p>
+            <div className="h-2 bg-ameltan" />
 
-            </div>
-
-            {/* =========================
-                ERROR MESSAGE
-            ========================= */}
-            {error && (
-              <div className="mb-6 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700">
-                {error}
-              </div>
-            )}
-
-            {/* =========================
-                FORM
-            ========================= */}
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-6"
-            >
+            <div className="p-6 sm:p-8">
 
               {/* =========================
-                  FULL NAME
+                  ERROR
               ========================= */}
-              <div>
 
-                <label
-                  htmlFor="fullName"
-                  className="text-sm font-semibold text-gray-700"
-                >
-                  Full Name
-                </label>
-
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  placeholder="Enter your full name"
-                  required
-                  autoComplete="name"
-                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
-                />
-
-              </div>
+              {error && (
+                <div className="mb-6 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                  {error}
+                </div>
+              )}
 
               {/* =========================
-                  EMAIL + PHONE
+                  SUCCESS
               ========================= */}
-              <div className="grid gap-6 sm:grid-cols-2">
+
+              {success && (
+                <div className="mb-6 rounded-lg border border-green-100 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                  {success}
+                </div>
+              )}
+
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-5"
+              >
+
+                {/* NAME */}
+
+                <div>
+
+                  <label
+                    htmlFor="name"
+                    className="text-sm font-semibold text-gray-700"
+                  >
+                    Full Name
+                  </label>
+
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Enter your full name"
+                    autoComplete="name"
+                    required
+                    className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                  />
+
+                </div>
 
                 {/* EMAIL */}
+
                 <div>
 
                   <label
@@ -255,45 +276,15 @@ const Register = () => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="you@example.com"
-                    required
                     autoComplete="email"
-                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
-                  />
-
-                </div>
-
-                {/* PHONE */}
-                <div>
-
-                  <label
-                    htmlFor="phone"
-                    className="text-sm font-semibold text-gray-700"
-                  >
-                    Phone Number
-                  </label>
-
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="08012345678"
                     required
-                    autoComplete="tel"
-                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                    className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                   />
 
                 </div>
 
-              </div>
+                {/* MLT NUMBER */}
 
-              {/* =========================
-                  MLT NUMBER + STATE
-              ========================= */}
-              <div className="grid gap-6 sm:grid-cols-2">
-
-                {/* MLT/MLA NUMBER */}
                 <div>
 
                   <label
@@ -308,218 +299,120 @@ const Register = () => {
                     name="mltNumber"
                     type="text"
                     value={formData.mltNumber}
-                    onChange={handleMltNumberChange}
+                    onChange={handleChange}
                     placeholder="MLT12345"
                     maxLength={8}
                     required
-                    autoComplete="off"
-                    spellCheck="false"
-                    pattern="^(MLT|MLA)[0-9]{5}$"
-                    title="Enter your MLT/MLA number in the format MLT12345 or MLA12345"
-                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-semibold tracking-wide text-gray-900 outline-none transition placeholder:font-normal placeholder:tracking-normal placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                    className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm uppercase text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                   />
 
                   <p className="mt-2 text-xs text-gray-500">
-                    Format: MLT12345 or MLA12345
+                    Format: MLT12345
                   </p>
 
                 </div>
 
-                {/* STATE */}
+                {/* PASSWORD */}
+
                 <div>
 
                   <label
-                    htmlFor="state"
+                    htmlFor="password"
                     className="text-sm font-semibold text-gray-700"
                   >
-                    State
+                    Password
                   </label>
-
-                  <select
-                    id="state"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    required
-                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
-                  >
-
-                    <option value="">
-                      Select your state
-                    </option>
-
-                    {states.map((state) => (
-                      <option
-                        key={state}
-                        value={state}
-                      >
-                        {state}
-                      </option>
-                    ))}
-
-                  </select>
-
-                </div>
-
-              </div>
-
-              {/* =========================
-                  PASSWORD
-              ========================= */}
-              <div>
-
-                <label
-                  htmlFor="password"
-                  className="text-sm font-semibold text-gray-700"
-                >
-                  Password
-                </label>
-
-                <div className="relative mt-2">
 
                   <input
                     id="password"
                     name="password"
-                    type={showPassword ? "text" : "password"}
+                    type="password"
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Create a password"
-                    required
-                    minLength={8}
                     autoComplete="new-password"
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 pr-20 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                    required
+                    className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                   />
 
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 !m-0 !w-auto -translate-y-1/2 !bg-transparent px-2 py-1 text-xs font-bold text-ameltan hover:!bg-transparent"
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Minimum 6 characters.
+                  </p>
 
                 </div>
 
-                <p className="mt-2 text-xs text-gray-500">
-                  Password must contain at least 8 characters.
-                </p>
+                {/* CONFIRM PASSWORD */}
 
-              </div>
+                <div>
 
-              {/* =========================
-                  CONFIRM PASSWORD
-              ========================= */}
-              <div>
-
-                <label
-                  htmlFor="confirmPassword"
-                  className="text-sm font-semibold text-gray-700"
-                >
-                  Confirm Password
-                </label>
-
-                <div className="relative mt-2">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="text-sm font-semibold text-gray-700"
+                  >
+                    Confirm Password
+                  </label>
 
                   <input
                     id="confirmPassword"
                     name="confirmPassword"
-                    type={
-                      showConfirmPassword
-                        ? "text"
-                        : "password"
-                    }
+                    type="password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="Confirm your password"
-                    required
                     autoComplete="new-password"
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 pr-20 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                    required
+                    className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                   />
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowConfirmPassword(
-                        !showConfirmPassword
-                      )
-                    }
-                    className="absolute right-3 top-1/2 !m-0 !w-auto -translate-y-1/2 !bg-transparent px-2 py-1 text-xs font-bold text-ameltan hover:!bg-transparent"
-                  >
-                    {showConfirmPassword ? "Hide" : "Show"}
-                  </button>
 
                 </div>
 
-              </div>
+                {/* SUBMIT */}
 
-              {/* =========================
-                  TERMS
-              ========================= */}
-              <div className="flex items-start gap-3 rounded-lg bg-gray-50 p-4">
-
-                <input
-                  id="terms"
-                  type="checkbox"
-                  required
-                  className="mt-1 h-4 w-4 shrink-0 accent-[#1f6f54]"
-                />
-
-                <label
-                  htmlFor="terms"
-                  className="text-xs leading-5 text-gray-600 sm:text-sm"
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-lg bg-ameltan px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-ameltan-dark hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  I confirm that the information provided is accurate
-                  and agree to the AMELTAN membership terms and
-                  conditions.
-                </label>
+                  {loading
+                    ? "Creating Account..."
+                    : "Create Account"}
 
-              </div>
+                  {!loading && (
+                    <span className="ml-2">
+                      →
+                    </span>
+                  )}
+                </button>
+
+              </form>
 
               {/* =========================
-                  CREATE ACCOUNT BUTTON
+                  LOGIN LINK
               ========================= */}
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-ameltan px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-ameltan-dark hover:shadow-md"
-              >
-                Create Account
-                <span className="ml-2">
-                  →
-                </span>
-              </button>
 
-            </form>
+              <div className="mt-8 border-t border-gray-100 pt-7 text-center">
 
-            {/* =========================
-                LOGIN LINK
-            ========================= */}
-            <div className="mt-8 border-t border-gray-100 pt-7 text-center">
+                <p className="text-sm text-gray-600">
+                  Already have an AMELTAN account?
+                </p>
 
-              <p className="text-sm text-gray-600">
-                Already have an account?
-              </p>
+                <Link
+                  to="/login"
+                  className="mt-2 inline-block text-sm font-bold text-ameltan hover:underline"
+                >
+                  Sign in →
+                </Link>
 
-              <Link
-                to="/login"
-                className="mt-2 inline-block text-sm font-bold text-ameltan hover:underline"
-              >
-                Sign in to your account →
-              </Link>
+              </div>
 
             </div>
 
           </div>
 
-        </div>
+          {/* SECURITY NOTE */}
 
-        {/* =========================
-            SECURITY NOTE
-        ========================= */}
-        <div className="mx-auto mt-6 w-full max-w-6xl px-4 text-center">
-
-          <p className="text-xs leading-5 text-gray-500">
-            Your information should be kept secure and used only
-            for legitimate membership and association purposes.
+          <p className="mt-6 text-center text-xs leading-5 text-gray-500">
+            Your registration information is securely processed by the AMELTAN server.
           </p>
 
         </div>
@@ -531,3 +424,4 @@ const Register = () => {
 };
 
 export default Register;
+

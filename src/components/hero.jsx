@@ -64,17 +64,7 @@ const Hero = () => {
 
           <div className="max-w-4xl">
 
-            {/* LABEL */}
-            <div className="mb-4 inline-flex max-w-full items-center gap-2 rounded-full border border-white/20 bg-black/20 px-3 py-2 backdrop-blur-sm sm:mb-5 sm:px-4">
-
-              <span className="h-2 w-2 shrink-0 rounded-full bg-white" />
-
-              <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-white sm:text-xs sm:tracking-[0.2em]">
-                Association of Medical Laboratory Technicians and Assistants
-              </span>
-
-            </div>
-
+      
             {/* MAIN HEADING */}
             <h1
               className="
@@ -103,7 +93,7 @@ const Hero = () => {
               "
             >
               AMELTAN represents Medical Laboratory Technicians and
-              Assistants, promoting excellence, professionalism, and
+              Assistants of Nigeria, promoting excellence, professionalism, and
               ethical practice.
             </p>
 
