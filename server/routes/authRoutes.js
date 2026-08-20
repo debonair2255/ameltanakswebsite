@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const protect = require("../middleware/authMiddleware");
+const adminOnly = require("../middleware/adminMiddleware");
 const router = express.Router();
 
 /*
@@ -246,4 +247,29 @@ router.get("/me", protect, async (req, res) => {
     });
   }
 });
+
+/*
+=================================
+ADMIN TEST ROUTE
+GET /api/auth/admin-test
+PROTECTED ADMIN ROUTE
+=================================
+*/
+
+router.get(
+  "/admin-test",
+  protect,
+  adminOnly,
+  (req, res) => {
+    res.status(200).json({
+      success: true,
+      message: "Admin authentication successful.",
+      admin: {
+        id: req.user.id,
+        email: req.user.email,
+        role: req.user.role,
+      },
+    });
+  }
+);
 module.exports = router;

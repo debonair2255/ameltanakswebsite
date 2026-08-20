@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { notifications } from "./notificationData";
+import { notifications } from "./NotificationData";
 
 const Notifications = () => {
   const unreadNotifications = notifications.filter(
