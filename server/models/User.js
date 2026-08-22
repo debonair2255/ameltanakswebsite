@@ -36,6 +36,24 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: /^MLT\d{5}$/,
     },
+
+    phone: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    state: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    membershipStatus: {
+      type: String,
+      enum: ["active", "pending", "inactive"],
+      default: "active",
+    },
   },
   {
     timestamps: true,

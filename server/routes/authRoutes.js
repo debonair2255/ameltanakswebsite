@@ -15,15 +15,24 @@ POST /api/auth/register
 
 router.post("/register", async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      password,
-      mltNumber,
-    } = req.body;
+   const {
+  name,
+  email,
+  password,
+  mltNumber,
+  phone,
+  state,
+} = req.body;
 
     // Check required fields
-    if (!name || !email || !password || !mltNumber) {
+   if (
+  !name ||
+  !email ||
+  !password ||
+  !mltNumber ||
+  !phone ||
+  !state
+) {
       return res.status(400).json({
         success: false,
         message: "Please provide all required fields.",
@@ -34,6 +43,7 @@ router.post("/register", async (req, res) => {
     const cleanName = name.trim();
     const cleanEmail = email.trim().toLowerCase();
     const cleanMltNumber = mltNumber.trim().toUpperCase();
+    
 
     // Validate MLT number
     if (!/^MLT\d{5}$/.test(cleanMltNumber)) {
@@ -84,25 +94,31 @@ router.post("/register", async (req, res) => {
     );
 
     // Create member
-    const user = await User.create({
-      name: cleanName,
-      email: cleanEmail,
-      password: hashedPassword,
-      role: "member",
-      mltNumber: cleanMltNumber,
-    });
+  const user = await User.create({
+  name: cleanName,
+  email: cleanEmail,
+  password: hashedPassword,
+  role: "member",
+  mltNumber: cleanMltNumber,
+  phone: cleanPhone,
+  state: cleanState,
+  membershipStatus: "active",
+});
 
     // Send safe response
     res.status(201).json({
       success: true,
       message: "Registration successful.",
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        mltNumber: user.mltNumber,
-      },
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  mltNumber: user.mltNumber,
+  phone: user.phone,
+  state: user.state,
+  membershipStatus: user.membershipStatus,
+},
     });
   } catch (error) {
     console.error(
@@ -195,6 +211,9 @@ router.post("/login", async (req, res) => {
         email: user.email,
         role: user.role,
         mltNumber: user.mltNumber,
+        phone: user.phone,
+        state: user.state,
+        membershipStatus: user.membershipStatus,
       },
     });
   } catch (error) {

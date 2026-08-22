@@ -60,14 +60,27 @@ const Login = () => {
         }
       );
 
-      const data = await response.json();
+     const data = await response.json();
 
-      console.log("LOGIN RESPONSE:", data);
+if (!response.ok) {
+  setError(data.message || "Login failed.");
+  return;
+}
 
-      if (!response.ok) {
-        setError(data.message || "Login failed.");
-        return;
-      }
+console.log("LOGIN RESPONSE:", data);
+
+const storage = rememberMe
+  ? localStorage
+  : sessionStorage;
+
+storage.setItem("ameltan_token", data.token);
+
+storage.setItem(
+  "ameltan_user",
+  JSON.stringify(data.user)
+);
+
+navigate("/dashboard");
 
       if (!data.user) {
         setError(

@@ -1,16 +1,125 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 const Profile = () => {
-  // Temporary member data.
-  // This will later come from the authenticated user's account.
-  const member = {
-    fullName: "AMELTAN Member",
-    email: "member@example.com",
-    phone: "08012345678",
-    mltNumber: "MLT12345",
-    state: "Akwa Ibom",
-    membershipStatus: "Active",
-  };
+  const [member, setMember] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token =
+          localStorage.getItem("ameltan_token") ||
+          sessionStorage.getItem("ameltan_token");
+
+        if (!token) {
+          setError("Your session has expired. Please login again.");
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(
+          "http://localhost:10000/api/auth/me",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        console.log("PROFILE RESPONSE:", data);
+
+        if (!response.ok) {
+          setError(
+            data.message || "Unable to load your profile."
+          );
+          setLoading(false);
+          return;
+        }
+
+        setMember(data.user);
+      } catch (error) {
+        console.error("Profile error:", error);
+
+        setError(
+          "Unable to connect to the server. Please make sure the backend is running."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  // =========================
+  // LOADING
+  // =========================
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-ameltan-pale px-5">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-ameltan/20 border-t-ameltan" />
+
+          <p className="mt-4 text-sm font-semibold text-gray-600">
+            Loading your profile...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  // =========================
+  // ERROR
+  // =========================
+  if (error) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-ameltan-pale px-5">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-2xl">
+            ⚠️
+          </div>
+
+          <h1 className="mt-5 text-xl font-bold text-gray-900">
+            Unable to Load Profile
+          </h1>
+
+          <p className="mt-2 text-sm leading-6 text-gray-600">
+            {error}
+          </p>
+
+          <Link
+            to="/login"
+            className="mt-6 inline-flex rounded-lg bg-ameltan px-6 py-3 text-sm font-bold text-white transition hover:bg-ameltan-dark"
+          >
+            Login Again
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (!member) {
+    return null;
+  }
+
+  const fullName = member.name || "Member";
+  const email = member.email || "Not provided";
+  const phone = member.phone || "Not provided";
+  const mltNumber = member.mltNumber || "Not provided";
+  const state = member.state || "Not provided";
+
+  const membershipStatus =
+    member.membershipStatus || "active";
+
+  const formattedStatus =
+    membershipStatus.charAt(0).toUpperCase() +
+    membershipStatus.slice(1);
 
   return (
     <main className="min-h-screen bg-ameltan-pale px-5 py-10 sm:px-8 lg:px-12">
@@ -56,22 +165,31 @@ const Profile = () => {
 
               {/* PROFILE AVATAR */}
               <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-white/15 text-3xl font-bold backdrop-blur-sm">
-                {member.fullName.charAt(0)}
+                {fullName.charAt(0).toUpperCase()}
               </div>
 
               <div>
 
                 <h2 className="text-2xl font-bold">
-                  {member.fullName}
+                  {fullName}
                 </h2>
 
                 <p className="mt-1 text-sm text-white/75">
-                  {member.mltNumber}
+                  {mltNumber}
                 </p>
 
                 <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold">
-                  <span className="h-2 w-2 rounded-full bg-green-300" />
-                  {member.membershipStatus} Member
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      membershipStatus === "active"
+                        ? "bg-green-300"
+                        : membershipStatus === "pending"
+                        ? "bg-yellow-300"
+                        : "bg-red-300"
+                    }`}
+                  />
+
+                  {formattedStatus} Member
                 </div>
 
               </div>
@@ -110,7 +228,7 @@ const Profile = () => {
                 </p>
 
                 <p className="mt-2 font-semibold text-gray-900">
-                  {member.fullName}
+                  {fullName}
                 </p>
 
               </div>
@@ -123,7 +241,7 @@ const Profile = () => {
                 </p>
 
                 <p className="mt-2 break-all font-semibold text-gray-900">
-                  {member.email}
+                  {email}
                 </p>
 
               </div>
@@ -136,7 +254,7 @@ const Profile = () => {
                 </p>
 
                 <p className="mt-2 font-semibold text-gray-900">
-                  {member.phone}
+                  {phone}
                 </p>
 
               </div>
@@ -149,7 +267,7 @@ const Profile = () => {
                 </p>
 
                 <p className="mt-2 font-bold tracking-wide text-ameltan">
-                  {member.mltNumber}
+                  {mltNumber}
                 </p>
 
               </div>
@@ -162,7 +280,7 @@ const Profile = () => {
                 </p>
 
                 <p className="mt-2 font-semibold text-gray-900">
-                  {member.state}
+                  {state}
                 </p>
 
               </div>
@@ -176,10 +294,26 @@ const Profile = () => {
 
                 <div className="mt-2 flex items-center gap-2">
 
-                  <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      membershipStatus === "active"
+                        ? "bg-green-500"
+                        : membershipStatus === "pending"
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
+                    }`}
+                  />
 
-                  <span className="font-semibold text-green-700">
-                    {member.membershipStatus}
+                  <span
+                    className={`font-semibold ${
+                      membershipStatus === "active"
+                        ? "text-green-700"
+                        : membershipStatus === "pending"
+                        ? "text-yellow-700"
+                        : "text-red-700"
+                    }`}
+                  >
+                    {formattedStatus}
                   </span>
 
                 </div>
@@ -207,8 +341,7 @@ const Profile = () => {
 
                   <p className="mt-1 text-sm leading-6 text-gray-600">
                     Your MLT/MLA number is part of your professional
-                    membership record and should not be changed without
-                    proper authorization.
+                    membership record and should not be change.
                   </p>
 
                 </div>
