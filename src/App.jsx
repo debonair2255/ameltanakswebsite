@@ -22,6 +22,7 @@ import ProtectedRoute from "./context/ProtectedRoute";
 import AdminRoute from "./context/AdminRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import EditProfile from "./components/EditProfile";
 
 function App() {
   return (
@@ -136,6 +137,16 @@ function App() {
   path="/reset-password/:token"
   element={<ResetPassword />}
 />
+
+<Route
+  path="/edit-profile"
+  element={
+    <ProtectedRoute>
+      <EditProfile />
+    </ProtectedRoute>
+  }
+/>
+
         </Routes>
       </Layout>
     </BrowserRouter>

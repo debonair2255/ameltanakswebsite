@@ -862,5 +862,125 @@ router.get(
     });
   }
 );
+// =========================
+// UPDATE MEMBER PROFILE
+// PUT /api/auth/profile
+// =========================
 
+router.put("/profile", protect, async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      phone,
+      state,
+    } = req.body;
+
+    // =========================
+    // VALIDATE NAME
+    // =========================
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Name is required.",
+      });
+    }
+
+    // =========================
+    // VALIDATE EMAIL
+    // =========================
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required.",
+      });
+    }
+
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone
+      ? phone.trim()
+      : "";
+    const cleanState = state
+      ? state.trim()
+      : "";
+
+    // =========================
+    // CHECK EMAIL
+    // =========================
+
+    const existingUser = await User.findOne({
+      email: cleanEmail,
+      _id: { $ne: req.user.id },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Another account is already using this email.",
+      });
+    }
+
+    // =========================
+    // FIND CURRENT USER
+    // =========================
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User account not found.",
+      });
+    }
+
+    // =========================
+    // UPDATE ALLOWED FIELDS
+    // =========================
+
+    user.name = cleanName;
+    user.email = cleanEmail;
+    user.phone = cleanPhone;
+    user.state = cleanState;
+
+    await user.save();
+
+    // =========================
+    // SAFE RESPONSE
+    // =========================
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        mltNumber: user.mltNumber,
+        phone: user.phone,
+        state: user.state,
+        membershipId: user.membershipId,
+        membershipType: user.membershipType,
+        membershipStatus: user.membershipStatus,
+        membershipDate: user.membershipDate,
+        profilePicture: user.profilePicture,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Update profile error:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message:
+        "Server error while updating profile.",
+    });
+  }
+});
 module.exports = router;
