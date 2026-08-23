@@ -9,45 +9,163 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        // =========================
+        // GET SAVED TOKEN
+        // =========================
         const token =
           localStorage.getItem("ameltan_token") ||
           sessionStorage.getItem("ameltan_token");
 
         if (!token) {
-          setError("Your session has expired. Please login again.");
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch(
-          "http://localhost:10000/api/auth/me",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const data = await response.json();
-
-        console.log("PROFILE RESPONSE:", data);
-
-        if (!response.ok) {
           setError(
-            data.message || "Unable to load your profile."
+            "Your session has expired. Please login again."
           );
           setLoading(false);
           return;
         }
 
+        // =========================
+        // BACKEND URL
+        // =========================
+        const backendUrl =
+          import.meta.env.VITE_BACKEND_URL;
+
+        if (!backendUrl) {
+          console.error(
+            "VITE_BACKEND_URL is not configured."
+          );
+
+          setError(
+            "The backend server is not configured correctly."
+          );
+          setLoading(false);
+          return;
+        }
+
+        const profileUrl =
+          `${backendUrl.replace(/\/$/, "")}/api/auth/me`;
+
+        console.log(
+          "PROFILE URL:",
+          profileUrl
+        );
+
+        // =========================
+        // FETCH PROFILE
+        // =========================
+        const response = await fetch(
+          profileUrl,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+            },
+          }
+        );
+
+        // =========================
+        // SAFELY READ RESPONSE
+        // =========================
+        const responseText =
+          await response.text();
+
+        let data = {};
+
+        try {
+          data = responseText
+            ? JSON.parse(responseText)
+            : {};
+        } catch (jsonError) {
+          console.error(
+            "Invalid JSON response from profile endpoint:",
+            jsonError
+          );
+
+          data = {
+            message:
+              responseText ||
+              "The server returned an invalid response.",
+          };
+        }
+
+        console.log(
+          "PROFILE STATUS:",
+          response.status
+        );
+
+        console.log(
+          "PROFILE RESPONSE:",
+          data
+        );
+
+        // =========================
+        // HANDLE SERVER ERROR
+        // =========================
+        if (!response.ok) {
+          // If token is invalid/expired
+          if (
+            response.status === 401 ||
+            response.status === 403
+          ) {
+            localStorage.removeItem(
+              "ameltan_user"
+            );
+
+            localStorage.removeItem(
+              "ameltan_token"
+            );
+
+            sessionStorage.removeItem(
+              "ameltan_user"
+            );
+
+            sessionStorage.removeItem(
+              "ameltan_token"
+            );
+
+            setError(
+              "Your session has expired. Please login again."
+            );
+
+            setLoading(false);
+            return;
+          }
+
+          setError(
+            data.message ||
+              `Unable to load your profile. Server returned ${response.status}.`
+          );
+
+          setLoading(false);
+          return;
+        }
+
+        // =========================
+        // CHECK USER DATA
+        // =========================
+        if (!data.user) {
+          setError(
+            "Your profile information could not be found."
+          );
+
+          setLoading(false);
+          return;
+        }
+
+        // =========================
+        // SAVE PROFILE
+        // =========================
         setMember(data.user);
+
       } catch (error) {
-        console.error("Profile error:", error);
+        console.error(
+          "Profile error:",
+          error
+        );
 
         setError(
-          "Unable to connect to the server. Please make sure the backend is running."
+          "Unable to connect to the server. Please check your internet connection and try again."
         );
       } finally {
         setLoading(false);
@@ -81,6 +199,7 @@ const Profile = () => {
     return (
       <main className="flex min-h-screen items-center justify-center bg-ameltan-pale px-5">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-sm">
+
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-2xl">
             ⚠️
           </div>
@@ -104,15 +223,30 @@ const Profile = () => {
     );
   }
 
+  // =========================
+  // NO MEMBER
+  // =========================
   if (!member) {
     return null;
   }
 
-  const fullName = member.name || "Member";
-  const email = member.email || "Not provided";
-  const phone = member.phone || "Not provided";
-  const mltNumber = member.mltNumber || "Not provided";
-  const state = member.state || "Not provided";
+  // =========================
+  // MEMBER DATA
+  // =========================
+  const fullName =
+    member.name || "Member";
+
+  const email =
+    member.email || "Not provided";
+
+  const phone =
+    member.phone || "Not provided";
+
+  const mltNumber =
+    member.mltNumber || "Not provided";
+
+  const state =
+    member.state || "Not provided";
 
   const membershipStatus =
     member.membershipStatus || "active";
@@ -138,6 +272,7 @@ const Profile = () => {
           </Link>
 
           <div className="mt-5">
+
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-ameltan">
               Member Area
             </p>
@@ -149,8 +284,8 @@ const Profile = () => {
             <p className="mt-2 text-sm leading-6 text-gray-600 sm:text-base">
               View your membership information and account details.
             </p>
-          </div>
 
+          </div>
         </div>
 
         {/* =========================
@@ -165,7 +300,9 @@ const Profile = () => {
 
               {/* PROFILE AVATAR */}
               <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-white/15 text-3xl font-bold backdrop-blur-sm">
-                {fullName.charAt(0).toUpperCase()}
+                {fullName
+                  .charAt(0)
+                  .toUpperCase()}
               </div>
 
               <div>
@@ -179,23 +316,25 @@ const Profile = () => {
                 </p>
 
                 <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold">
+
                   <span
                     className={`h-2 w-2 rounded-full ${
-                      membershipStatus === "active"
+                      membershipStatus ===
+                      "active"
                         ? "bg-green-300"
-                        : membershipStatus === "pending"
+                        : membershipStatus ===
+                          "pending"
                         ? "bg-yellow-300"
                         : "bg-red-300"
                     }`}
                   />
 
                   {formattedStatus} Member
+
                 </div>
 
               </div>
-
             </div>
-
           </div>
 
           {/* =========================
@@ -206,6 +345,7 @@ const Profile = () => {
             <div className="mb-6 flex items-center justify-between">
 
               <div>
+
                 <h3 className="text-xl font-bold text-gray-900">
                   Personal Information
                 </h3>
@@ -213,6 +353,7 @@ const Profile = () => {
                 <p className="mt-1 text-sm text-gray-500">
                   Information associated with your membership account.
                 </p>
+
               </div>
 
             </div>
@@ -296,9 +437,11 @@ const Profile = () => {
 
                   <span
                     className={`h-2.5 w-2.5 rounded-full ${
-                      membershipStatus === "active"
+                      membershipStatus ===
+                      "active"
                         ? "bg-green-500"
-                        : membershipStatus === "pending"
+                        : membershipStatus ===
+                          "pending"
                         ? "bg-yellow-500"
                         : "bg-red-500"
                     }`}
@@ -306,9 +449,11 @@ const Profile = () => {
 
                   <span
                     className={`font-semibold ${
-                      membershipStatus === "active"
+                      membershipStatus ===
+                      "active"
                         ? "text-green-700"
-                        : membershipStatus === "pending"
+                        : membershipStatus ===
+                          "pending"
                         ? "text-yellow-700"
                         : "text-red-700"
                     }`}
@@ -341,7 +486,7 @@ const Profile = () => {
 
                   <p className="mt-1 text-sm leading-6 text-gray-600">
                     Your MLT/MLA number is part of your professional
-                    membership record and should not be change.
+                    membership record and should not be changed.
                   </p>
 
                 </div>
@@ -372,7 +517,6 @@ const Profile = () => {
             </div>
 
           </div>
-
         </section>
 
         {/* =========================
