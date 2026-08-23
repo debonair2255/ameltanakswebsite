@@ -282,7 +282,7 @@ const Profile = () => {
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-gray-600 sm:text-base">
-              View your membership information and account details.
+              View your membership information.
             </p>
 
           </div>

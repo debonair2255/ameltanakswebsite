@@ -20,6 +20,8 @@ import Notifications from "./Notifications";
 import AdminAnnouncement from "./AdminAnnouncement";
 import ProtectedRoute from "./context/ProtectedRoute";
 import AdminRoute from "./context/AdminRoute";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -125,7 +127,15 @@ function App() {
               </AdminRoute>
             }
           />
+        <Route
+  path="/forgot-password"
+  element={<ForgotPassword />}
+/>
 
+<Route
+  path="/reset-password/:token"
+  element={<ResetPassword />}
+/>
         </Routes>
       </Layout>
     </BrowserRouter>
