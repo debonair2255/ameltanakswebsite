@@ -1,12 +1,23 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const { Resend } = require("resend");
+
 const User = require("../models/User");
 
 const protect = require("../middleware/authMiddleware");
 const adminOnly = require("../middleware/adminMiddleware");
 
 const router = express.Router();
+
+// =========================
+// RESEND
+// =========================
+
+const resend = new Resend(
+  process.env.RESEND_API_KEY
+);
 
 /*
 =================================
@@ -162,7 +173,6 @@ router.post("/register", async (req, res) => {
           user.membershipStatus,
       },
     });
-
   } catch (error) {
     console.error(
       "Registration error:",
@@ -287,7 +297,6 @@ router.post("/login", async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Login successful.",
-
       token,
 
       user: {
@@ -302,7 +311,6 @@ router.post("/login", async (req, res) => {
           user.membershipStatus,
       },
     });
-
   } catch (error) {
     console.error(
       "Login error:",
@@ -316,6 +324,463 @@ router.post("/login", async (req, res) => {
     });
   }
 });
+
+/*
+=================================
+FORGOT PASSWORD
+POST /api/auth/forgot-password
+=================================
+*/
+
+router.post(
+  "/forgot-password",
+  async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      // =========================
+      // VALIDATE EMAIL
+      // =========================
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Please provide your email address.",
+        });
+      }
+
+      const cleanEmail = email
+        .trim()
+        .toLowerCase();
+
+      // =========================
+      // FIND USER
+      // =========================
+
+      const user =
+        await User.findOne({
+          email: cleanEmail,
+        });
+
+      /*
+       IMPORTANT SECURITY RULE:
+
+       We return the same message whether
+       the email exists or not.
+
+       This prevents people from checking
+       whether an email has an AMELTAN account.
+      */
+
+      if (!user) {
+        return res.status(200).json({
+          success: true,
+          message:
+            "If an account exists with that email, a password reset link has been sent.",
+        });
+      }
+
+      // =========================
+      // GENERATE RESET TOKEN
+      // =========================
+
+      const resetToken =
+        crypto.randomBytes(32).toString("hex");
+
+      // =========================
+      // HASH TOKEN BEFORE STORAGE
+      // =========================
+
+      const hashedResetToken =
+        crypto
+          .createHash("sha256")
+          .update(resetToken)
+          .digest("hex");
+
+      // =========================
+      // TOKEN EXPIRATION
+      // 15 MINUTES
+      // =========================
+
+      const resetTokenExpiration =
+        Date.now() + 15 * 60 * 1000;
+
+      user.resetPasswordToken =
+        hashedResetToken;
+
+      user.resetPasswordExpires =
+        new Date(resetTokenExpiration);
+
+      await user.save();
+
+      // =========================
+      // FRONTEND URL
+      // =========================
+
+      const frontendUrl =
+        process.env.FRONTEND_URL;
+
+      if (!frontendUrl) {
+        console.error(
+          "FRONTEND_URL is missing from environment variables."
+        );
+
+        // Remove token if email cannot be sent
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+
+        await user.save();
+
+        return res.status(500).json({
+          success: false,
+          message:
+            "Password reset service is not configured correctly.",
+        });
+      }
+
+      // =========================
+      // RESET LINK
+      // =========================
+
+      const resetUrl =
+        `${frontendUrl.replace(/\/$/, "")}/reset-password/${resetToken}`;
+
+      // =========================
+      // SEND EMAIL
+      // =========================
+
+      if (!process.env.RESEND_API_KEY) {
+        console.error(
+          "RESEND_API_KEY is missing from environment variables."
+        );
+
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+
+        await user.save();
+
+        return res.status(500).json({
+          success: false,
+          message:
+            "Email service is not configured correctly.",
+        });
+      }
+
+      const { data, error } =
+        await resend.emails.send({
+          from:
+            process.env.RESEND_FROM_EMAIL ||
+            "AMELTAN <onboarding@resend.dev>",
+
+          to: [user.email],
+
+          subject:
+            "AMELTAN Password Reset",
+
+          html: `
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <title>AMELTAN Password Reset</title>
+              </head>
+
+              <body
+                style="
+                  margin: 0;
+                  padding: 0;
+                  background: #f5f7f6;
+                  font-family: Arial, Helvetica, sans-serif;
+                "
+              >
+
+                <div
+                  style="
+                    max-width: 600px;
+                    margin: 40px auto;
+                    background: #ffffff;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+                  "
+                >
+
+                  <div
+                    style="
+                      background: #1f6f54;
+                      padding: 30px;
+                      text-align: center;
+                    "
+                  >
+                    <h1
+                      style="
+                        margin: 0;
+                        color: #ffffff;
+                        font-size: 26px;
+                      "
+                    >
+                      AMELTAN
+                    </h1>
+                  </div>
+
+                  <div
+                    style="
+                      padding: 35px 30px;
+                      color: #333333;
+                    "
+                  >
+
+                    <h2>
+                      Password Reset Request
+                    </h2>
+
+                    <p>
+                      Hello ${user.name},
+                    </p>
+
+                    <p>
+                      We received a request to reset the password
+                      for your AMELTAN member account.
+                    </p>
+
+                    <p>
+                      Click the button below to create a new password.
+                    </p>
+
+                    <div
+                      style="
+                        text-align: center;
+                        margin: 30px 0;
+                      "
+                    >
+
+                      <a
+                        href="${resetUrl}"
+                        style="
+                          display: inline-block;
+                          padding: 14px 24px;
+                          background: #1f6f54;
+                          color: #ffffff;
+                          text-decoration: none;
+                          border-radius: 8px;
+                          font-weight: bold;
+                        "
+                      >
+                        Reset My Password
+                      </a>
+
+                    </div>
+
+                    <p>
+                      This password reset link will expire in
+                      <strong>15 minutes</strong>.
+                    </p>
+
+                    <p>
+                      If you did not request a password reset,
+                      you can safely ignore this email.
+                    </p>
+
+                    <p
+                      style="
+                        margin-top: 30px;
+                        color: #777777;
+                        font-size: 13px;
+                      "
+                    >
+                      For your security, do not share this
+                      password reset link with anyone.
+                    </p>
+
+                  </div>
+
+                  <div
+                    style="
+                      padding: 20px;
+                      background: #f5f7f6;
+                      text-align: center;
+                      color: #888888;
+                      font-size: 12px;
+                    "
+                  >
+                    AMELTAN Member Portal
+                  </div>
+
+                </div>
+
+              </body>
+            </html>
+          `,
+        });
+
+      if (error) {
+        console.error(
+          "Resend email error:",
+          error
+        );
+
+        // Remove reset token
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+
+        await user.save();
+
+        return res.status(500).json({
+          success: false,
+          message:
+            "Unable to send password reset email.",
+        });
+      }
+
+      console.log(
+        "Password reset email sent:",
+        data
+      );
+
+      // =========================
+      // SUCCESS
+      // =========================
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "If an account exists with that email, a password reset link has been sent.",
+      });
+    } catch (error) {
+      console.error(
+        "Forgot password error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Server error while processing password reset.",
+      });
+    }
+  }
+);
+
+/*
+=================================
+RESET PASSWORD
+POST /api/auth/reset-password/:token
+=================================
+*/
+
+router.post(
+  "/reset-password/:token",
+  async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      const { password } = req.body;
+
+      // =========================
+      // VALIDATE INPUT
+      // =========================
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Password reset token is missing.",
+        });
+      }
+
+      if (!password) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Please provide a new password.",
+        });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Password must be at least 6 characters long.",
+        });
+      }
+
+      // =========================
+      // HASH TOKEN
+      // =========================
+
+      const hashedToken =
+        crypto
+          .createHash("sha256")
+          .update(token)
+          .digest("hex");
+
+      // =========================
+      // FIND USER
+      // =========================
+
+      const user =
+        await User.findOne({
+          resetPasswordToken:
+            hashedToken,
+
+          resetPasswordExpires: {
+            $gt: new Date(),
+          },
+        });
+
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "This password reset link is invalid or has expired.",
+        });
+      }
+
+      // =========================
+      // HASH NEW PASSWORD
+      // =========================
+
+      const hashedPassword =
+        await bcrypt.hash(password, 12);
+
+      user.password =
+        hashedPassword;
+
+      // =========================
+      // CLEAR RESET TOKEN
+      // =========================
+
+      user.resetPasswordToken = null;
+
+      user.resetPasswordExpires = null;
+
+      await user.save();
+
+      // =========================
+      // SUCCESS
+      // =========================
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Your password has been reset successfully. You can now log in.",
+      });
+    } catch (error) {
+      console.error(
+        "Reset password error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Server error while resetting password.",
+      });
+    }
+  }
+);
 
 /*
 =================================
@@ -357,7 +822,6 @@ router.get(
             user.membershipStatus,
         },
       });
-
     } catch (error) {
       console.error(
         "Get current user error:",
