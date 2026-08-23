@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+
+  // Keep your existing AuthContext
   const { login } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -38,6 +40,7 @@ const Login = () => {
 
     setError("");
 
+    // Validate fields
     if (!formData.email.trim() || !formData.password) {
       setError("Please enter your email and password.");
       return;
@@ -46,42 +49,87 @@ const Login = () => {
     setLoading(true);
 
     try {
-     const response = await fetch(
-  `${import.meta.env.VITE_BACKEND_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: formData.email.trim().toLowerCase(),
-            password: formData.password,
-          }),
-        }
+      // =========================
+      // BACKEND URL
+      // =========================
+      const backendUrl =
+        import.meta.env.VITE_BACKEND_URL;
+
+      if (!backendUrl) {
+        setError(
+          "Backend URL is not configured. Please check your VITE_BACKEND_URL."
+        );
+        return;
+      }
+
+      const loginUrl =
+        `${backendUrl.replace(/\/$/, "")}/api/auth/login`;
+
+      console.log("LOGIN URL:", loginUrl);
+
+      // =========================
+      // SEND LOGIN REQUEST
+      // =========================
+      const response = await fetch(loginUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email.trim().toLowerCase(),
+          password: formData.password,
+        }),
+      });
+
+      // =========================
+      // SAFELY READ RESPONSE
+      // =========================
+      const responseText = await response.text();
+
+      let data = {};
+
+      try {
+        data = responseText
+          ? JSON.parse(responseText)
+          : {};
+      } catch (jsonError) {
+        console.error(
+          "Invalid JSON response from server:",
+          jsonError
+        );
+
+        data = {
+          message:
+            responseText ||
+            "The server returned an invalid response.",
+        };
+      }
+
+      console.log(
+        "LOGIN STATUS:",
+        response.status
       );
 
-     const data = await response.json();
+      console.log(
+        "LOGIN RESPONSE:",
+        data
+      );
 
-if (!response.ok) {
-  setError(data.message || "Login failed.");
-  return;
-}
+      // =========================
+      // HANDLE SERVER ERROR
+      // =========================
+      if (!response.ok) {
+        setError(
+          data.message ||
+            `Login failed. Server returned ${response.status}.`
+        );
+        return;
+      }
 
-console.log("LOGIN RESPONSE:", data);
-
-const storage = rememberMe
-  ? localStorage
-  : sessionStorage;
-
-storage.setItem("ameltan_token", data.token);
-
-storage.setItem(
-  "ameltan_user",
-  JSON.stringify(data.user)
-);
-
-navigate("/dashboard");
-
+      // =========================
+      // CHECK LOGIN RESPONSE
+      // =========================
       if (!data.user) {
         setError(
           "Login succeeded, but no user information was returned."
@@ -89,34 +137,63 @@ navigate("/dashboard");
         return;
       }
 
-     // Save user + JWT in AuthContext
-const result = login(
-  data.user,
-  data.token,
-  rememberMe
-);
+      if (!data.token) {
+        setError(
+          "Login succeeded, but no authentication token was returned."
+        );
+        return;
+      }
 
-if (!result.success) {
-  setError(
-    result.message || "Unable to complete login."
-  );
-  return;
-}
+      // =========================
+      // SAVE USER + TOKEN
+      // USING YOUR EXISTING CONTEXT
+      // =========================
+      const result = login(
+        data.user,
+        data.token,
+        rememberMe
+      );
 
-console.log("AUTH USER:", result.user);
-console.log("JWT TOKEN:", result.token);
+      console.log(
+        "AUTH LOGIN RESULT:",
+        result
+      );
+
+      // =========================
+      // CHECK CONTEXT RESULT
+      // =========================
+      if (!result || !result.success) {
+        setError(
+          result?.message ||
+            "Unable to complete login."
+        );
+        return;
+      }
+
+      console.log(
+        "AUTH USER:",
+        result.user
+      );
+
+      console.log(
+        "JWT TOKEN:",
+        result.token
+      );
 
       // =========================
       // REDIRECT
       // =========================
-      if (data.user.role === "admin") {
-        navigate("/admin/announcements");
+      if (result.user?.role === "admin") {
+        navigate("/");
       } else {
-        navigate("/dashboard");
+        navigate("/");
       }
 
     } catch (error) {
-      console.error("Login error:", error);
+      console.error(
+        "Login error:",
+        error
+      );
 
       setError(
         "Unable to connect to the server. Please make sure the backend is running."
@@ -128,14 +205,11 @@ console.log("JWT TOKEN:", result.token);
 
   return (
     <main className="min-h-screen bg-ameltan-pale px-5 py-12 sm:px-8 sm:py-16">
-
       <div className="mx-auto flex min-h-[80vh] max-w-6xl items-center justify-center">
-
         <div className="w-full max-w-md">
 
           {/* HEADER */}
           <div className="text-center">
-
             <span className="text-sm font-bold uppercase tracking-[0.2em] text-ameltan">
               Member Access
             </span>
@@ -147,12 +221,10 @@ console.log("JWT TOKEN:", result.token);
             <p className="mt-3 text-sm leading-6 text-gray-600 sm:text-base">
               Sign in to access your AMELTAN member account.
             </p>
-
           </div>
 
-          {/* LOGIN CARD */}
+          {/* CARD */}
           <div className="mt-8 overflow-hidden rounded-2xl bg-white shadow-sm">
-
             <div className="h-2 bg-ameltan" />
 
             <div className="p-6 sm:p-8">
@@ -164,6 +236,7 @@ console.log("JWT TOKEN:", result.token);
                 </div>
               )}
 
+              {/* LOGIN FORM */}
               <form
                 onSubmit={handleSubmit}
                 className="space-y-6"
@@ -171,7 +244,6 @@ console.log("JWT TOKEN:", result.token);
 
                 {/* EMAIL */}
                 <div>
-
                   <label
                     htmlFor="email"
                     className="text-sm font-semibold text-gray-700"
@@ -188,16 +260,14 @@ console.log("JWT TOKEN:", result.token);
                     placeholder="you@example.com"
                     autoComplete="email"
                     required
-                    className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                    disabled={loading}
+                    className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-ameltan focus:ring-2 focus:ring-ameltan/10 disabled:bg-gray-100"
                   />
-
                 </div>
 
                 {/* PASSWORD */}
                 <div>
-
                   <div className="flex items-center justify-between">
-
                     <label
                       htmlFor="password"
                       className="text-sm font-semibold text-gray-700"
@@ -207,15 +277,13 @@ console.log("JWT TOKEN:", result.token);
 
                     <Link
                       to="/forgot-password"
-                      className="text-xs font-bold text-ameltan hover:underline sm:text-sm"
+                      className="text-xs font-bold text-ameltan hover:underline"
                     >
                       Forgot password?
                     </Link>
-
                   </div>
 
                   <div className="relative mt-2">
-
                     <input
                       id="password"
                       name="password"
@@ -229,33 +297,40 @@ console.log("JWT TOKEN:", result.token);
                       placeholder="Enter your password"
                       autoComplete="current-password"
                       required
-                      className="w-full rounded-lg border border-gray-200 px-4 py-3 pr-20 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                      disabled={loading}
+                      className="w-full rounded-lg border border-gray-200 px-4 py-3 pr-20 text-sm outline-none transition focus:border-ameltan focus:ring-2 focus:ring-ameltan/10 disabled:bg-gray-100"
                     />
 
                     <button
                       type="button"
                       onClick={() =>
-                        setShowPassword(!showPassword)
+                        setShowPassword(
+                          (prev) => !prev
+                        )
                       }
-                      className="absolute right-3 top-1/2 !m-0 !w-auto -translate-y-1/2 !bg-transparent px-2 py-1 text-xs font-bold text-ameltan hover:!bg-transparent"
+                      disabled={loading}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-ameltan disabled:opacity-50"
                     >
-                      {showPassword ? "Hide" : "Show"}
+                      {showPassword
+                        ? "Hide"
+                        : "Show"}
                     </button>
-
                   </div>
-
                 </div>
 
                 {/* REMEMBER ME */}
                 <div className="flex items-center">
-
                   <input
                     id="rememberMe"
+                    name="rememberMe"
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) =>
-                      setRememberMe(e.target.checked)
+                      setRememberMe(
+                        e.target.checked
+                      )
                     }
+                    disabled={loading}
                     className="h-4 w-4 accent-[#1f6f54]"
                   />
 
@@ -265,31 +340,22 @@ console.log("JWT TOKEN:", result.token);
                   >
                     Remember me
                   </label>
-
                 </div>
 
                 {/* LOGIN BUTTON */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-lg bg-ameltan px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-ameltan-dark hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-lg bg-ameltan px-6 py-3.5 text-sm font-bold text-white transition hover:bg-ameltan-dark disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading
                     ? "Signing In..."
                     : "Sign In"}
-
-                  {!loading && (
-                    <span className="ml-2">
-                      →
-                    </span>
-                  )}
                 </button>
-
               </form>
 
               {/* REGISTER */}
               <div className="mt-8 border-t border-gray-100 pt-7 text-center">
-
                 <p className="text-sm text-gray-600">
                   Don't have an AMELTAN account?
                 </p>
@@ -300,22 +366,17 @@ console.log("JWT TOKEN:", result.token);
                 >
                   Create an account →
                 </Link>
-
               </div>
-
             </div>
-
           </div>
 
-          {/* SECURITY NOTE */}
-          <p className="mt-6 text-center text-xs leading-5 text-gray-500">
+          {/* FOOTER TEXT */}
+          <p className="mt-6 text-center text-xs text-gray-500">
             Member access is intended for registered AMELTAN members.
           </p>
 
         </div>
-
       </div>
-
     </main>
   );
 };
