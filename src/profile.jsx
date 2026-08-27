@@ -500,12 +500,13 @@ const Profile = () => {
             ========================= */}
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
 
-              <button
-                type="button"
+              <Link 
+              to ="/EditProfile"
+               
                 className="rounded-lg border border-gray-200 px-5 py-3 text-sm font-bold text-gray-700 transition hover:border-ameltan hover:text-ameltan"
               >
                 Edit Profile
-              </button>
+            </Link>
 
               <Link
                 to="/dashboard"
