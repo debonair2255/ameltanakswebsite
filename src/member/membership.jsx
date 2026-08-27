@@ -1,18 +1,25 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Membership = () => {
   // Temporary member information.
   // This will later come from the authenticated user's database record.
-  const member = {
-    fullName: "AMELTAN Member",
-    mltNumber: "MLT12345",
-    membershipId: "AMELTAN-00001",
-    membershipType: "Active Member",
-    state: "Akwa Ibom",
-    registrationDate: "17 August 2026",
-    status: "Active",
-  };
+const { user } = useAuth();
 
+const member = {
+  fullName: user?.name || "Member",
+  email: user?.email || "",
+  mltNumber: user?.mltNumber || "Not available",
+  membershipId: user?.id
+    ? `AMELTAN-${user.id.slice(-5).toUpperCase()}`
+    : "Not available",
+  membershipType: user?.role === "admin"
+    ? "Administrator"
+    : "Active Member",
+  state: "Not available",
+  registrationDate: "Not available",
+  status: "Active",
+};
   return (
     <main className="min-h-screen bg-ameltan-pale px-5 py-10 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
