@@ -22,7 +22,7 @@ import ProtectedRoute from "./context/ProtectedRoute";
 import AdminRoute from "./context/AdminRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import EditProfile from "./EditProfile";
+import EditProfile from "./componentsEditProfile";
 
 function App() {
   return (
