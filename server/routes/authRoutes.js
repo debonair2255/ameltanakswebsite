@@ -836,6 +836,73 @@ router.get(
     }
   }
 );
+router.put("/profile", protect, async (req, res) => {
+  try {
+    const { name, email, phone, state } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and email are required.",
+      });
+    }
+
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = (phone || "").trim();
+    const cleanState = (state || "").trim();
+
+    const existingUser = await User.findOne({
+      email: cleanEmail,
+      _id: { $ne: req.user.id },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "That email address is already in use.",
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    user.name = cleanName;
+    user.email = cleanEmail;
+    user.phone = cleanPhone;
+    user.state = cleanState;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        mltNumber: user.mltNumber,
+        phone: user.phone,
+        state: user.state,
+        membershipStatus: user.membershipStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error while updating profile.",
+    });
+  }
+});
 
 /*
 =================================

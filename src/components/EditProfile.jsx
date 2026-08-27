@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -16,6 +17,25 @@ const EditProfile = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const getToken = () => {
+    return (
+      localStorage.getItem("ameltan_token") ||
+      sessionStorage.getItem("ameltan_token")
+    );
+  };
+
+  const getBackendUrl = () => {
+    const url = import.meta.env.VITE_BACKEND_URL;
+
+    if (!url) {
+      throw new Error(
+        "Backend URL is not configured. Please check your Vercel environment variable."
+      );
+    }
+
+    return url.replace(/\/$/, "");
+  };
+
   // =========================
   // LOAD PROFILE
   // =========================
@@ -23,9 +43,7 @@ const EditProfile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token =
-          localStorage.getItem("ameltan_token") ||
-          sessionStorage.getItem("ameltan_token");
+        const token = getToken();
 
         if (!token) {
           setError(
@@ -35,19 +53,10 @@ const EditProfile = () => {
           return;
         }
 
-        const backendUrl =
-          import.meta.env.VITE_BACKEND_URL;
-
-        if (!backendUrl) {
-          setError(
-            "The backend server is not configured correctly."
-          );
-          setLoading(false);
-          return;
-        }
+        const backendUrl = getBackendUrl();
 
         const response = await fetch(
-          `${backendUrl.replace(/\/$/, "")}/api/auth/me`,
+          `${backendUrl}/api/auth/me`,
           {
             method: "GET",
             headers: {
@@ -57,51 +66,36 @@ const EditProfile = () => {
           }
         );
 
-        const responseText = await response.text();
+        const data = await response.json();
 
-        let data = {};
+        console.log("EDIT PROFILE DATA:", data);
 
-        try {
-          data = responseText
-            ? JSON.parse(responseText)
-            : {};
-        } catch {
-          data = {
-            message:
-              responseText ||
-              "The server returned an invalid response.",
-          };
+        if (
+          response.status === 401 ||
+          response.status === 403
+        ) {
+          localStorage.removeItem("ameltan_token");
+          localStorage.removeItem("ameltan_user");
+
+          sessionStorage.removeItem("ameltan_token");
+          sessionStorage.removeItem("ameltan_user");
+
+          navigate("/login");
+          return;
         }
 
         if (!response.ok) {
-          if (
-            response.status === 401 ||
-            response.status === 403
-          ) {
-            localStorage.removeItem("ameltan_user");
-            localStorage.removeItem("ameltan_token");
-
-            sessionStorage.removeItem("ameltan_user");
-            sessionStorage.removeItem("ameltan_token");
-
-            navigate("/login");
-            return;
-          }
-
           setError(
             data.message ||
               "Unable to load your profile."
           );
-
-          setLoading(false);
           return;
         }
 
         if (!data.user) {
           setError(
-            "Your profile information could not be found."
+            "Profile information was not returned by the server."
           );
-          setLoading(false);
           return;
         }
 
@@ -111,7 +105,6 @@ const EditProfile = () => {
           phone: data.user.phone || "",
           state: data.user.state || "",
         });
-
       } catch (error) {
         console.error(
           "Edit profile loading error:",
@@ -119,7 +112,8 @@ const EditProfile = () => {
         );
 
         setError(
-          "Unable to connect to the server. Please try again."
+          error.message ||
+            "Unable to connect to the server."
         );
       } finally {
         setLoading(false);
@@ -165,12 +159,10 @@ const EditProfile = () => {
       return;
     }
 
-    setSaving(true);
-
     try {
-      const token =
-        localStorage.getItem("ameltan_token") ||
-        sessionStorage.getItem("ameltan_token");
+      setSaving(true);
+
+      const token = getToken();
 
       if (!token) {
         setError(
@@ -179,14 +171,10 @@ const EditProfile = () => {
         return;
       }
 
-      const backendUrl =
-        import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       const response = await fetch(
-        `${backendUrl.replace(
-          /\/$/,
-          ""
-        )}/api/auth/profile`,
+        `${backendUrl}/api/auth/profile`,
         {
           method: "PUT",
           headers: {
@@ -202,26 +190,23 @@ const EditProfile = () => {
         }
       );
 
-      const responseText = await response.text();
+      const data = await response.json();
 
-      let data = {};
+      console.log("UPDATE PROFILE RESPONSE:", data);
 
-      try {
-        data = responseText
-          ? JSON.parse(responseText)
-          : {};
-      } catch {
-        data = {
-          message:
-            responseText ||
-            "The server returned an invalid response.",
-        };
+      if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
+        localStorage.removeItem("ameltan_token");
+        localStorage.removeItem("ameltan_user");
+
+        sessionStorage.removeItem("ameltan_token");
+        sessionStorage.removeItem("ameltan_user");
+
+        navigate("/login");
+        return;
       }
-
-      console.log(
-        "UPDATE PROFILE RESPONSE:",
-        data
-      );
 
       if (!response.ok) {
         setError(
@@ -232,16 +217,22 @@ const EditProfile = () => {
       }
 
       if (data.user) {
-        const storage = localStorage.getItem(
-          "ameltan_token"
-        )
-          ? localStorage
-          : sessionStorage;
+        const storage =
+          localStorage.getItem("ameltan_token")
+            ? localStorage
+            : sessionStorage;
 
         storage.setItem(
           "ameltan_user",
           JSON.stringify(data.user)
         );
+
+        setFormData({
+          name: data.user.name || "",
+          email: data.user.email || "",
+          phone: data.user.phone || "",
+          state: data.user.state || "",
+        });
       }
 
       setSuccess(
@@ -250,8 +241,7 @@ const EditProfile = () => {
 
       setTimeout(() => {
         navigate("/profile");
-      }, 1000);
-
+      }, 1200);
     } catch (error) {
       console.error(
         "Update profile error:",
@@ -259,7 +249,8 @@ const EditProfile = () => {
       );
 
       setError(
-        "Unable to connect to the server. Please make sure the backend is running."
+        error.message ||
+          "Unable to connect to the server."
       );
     } finally {
       setSaving(false);
@@ -272,40 +263,39 @@ const EditProfile = () => {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-ameltan-pale px-5">
-        <div className="text-center">
+      <main className="min-h-screen bg-ameltan-pale px-5 py-10">
+        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-ameltan/20 border-t-ameltan" />
 
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-ameltan/20 border-t-ameltan" />
-
-          <p className="mt-4 text-sm font-semibold text-gray-600">
-            Loading your profile...
-          </p>
-
+            <p className="mt-4 text-sm font-semibold text-gray-600">
+              Loading your profile...
+            </p>
+          </div>
         </div>
       </main>
     );
   }
 
+  // =========================
+  // PAGE
+  // =========================
+
   return (
     <main className="min-h-screen bg-ameltan-pale px-5 py-10 sm:px-8 lg:px-12">
-
       <div className="mx-auto max-w-3xl">
 
-        {/* =========================
-            PAGE HEADER
-        ========================= */}
+        {/* HEADER */}
 
         <div className="mb-8">
-
           <Link
             to="/profile"
-            className="inline-flex items-center text-sm font-semibold text-ameltan transition hover:gap-2"
+            className="inline-flex items-center text-sm font-semibold text-ameltan hover:underline"
           >
             ← Back to Profile
           </Link>
 
           <div className="mt-5">
-
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-ameltan">
               Member Area
             </p>
@@ -317,17 +307,12 @@ const EditProfile = () => {
             <p className="mt-2 text-sm leading-6 text-gray-600 sm:text-base">
               Update your personal contact information.
             </p>
-
           </div>
-
         </div>
 
-        {/* =========================
-            FORM CARD
-        ========================= */}
+        {/* CARD */}
 
         <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
-
           <div className="h-2 bg-ameltan" />
 
           <div className="p-6 sm:p-8">
@@ -335,7 +320,7 @@ const EditProfile = () => {
             {/* ERROR */}
 
             {error && (
-              <div className="mb-6 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700">
                 {error}
               </div>
             )}
@@ -343,7 +328,7 @@ const EditProfile = () => {
             {/* SUCCESS */}
 
             {success && (
-              <div className="mb-6 rounded-lg border border-green-100 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+              <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium leading-6 text-green-700">
                 {success}
               </div>
             )}
@@ -353,10 +338,9 @@ const EditProfile = () => {
               className="space-y-6"
             >
 
-              {/* FULL NAME */}
+              {/* NAME */}
 
               <div>
-
                 <label
                   htmlFor="name"
                   className="text-sm font-semibold text-gray-700"
@@ -370,18 +354,15 @@ const EditProfile = () => {
                   type="text"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="Enter your full name"
                   autoComplete="name"
                   required
-                  className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                 />
-
               </div>
 
               {/* EMAIL */}
 
               <div>
-
                 <label
                   htmlFor="email"
                   className="text-sm font-semibold text-gray-700"
@@ -395,18 +376,15 @@ const EditProfile = () => {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="you@example.com"
                   autoComplete="email"
                   required
-                  className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                 />
-
               </div>
 
               {/* PHONE */}
 
               <div>
-
                 <label
                   htmlFor="phone"
                   className="text-sm font-semibold text-gray-700"
@@ -420,17 +398,14 @@ const EditProfile = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="Enter your phone number"
                   autoComplete="tel"
-                  className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                 />
-
               </div>
 
               {/* STATE */}
 
               <div>
-
                 <label
                   htmlFor="state"
                   className="text-sm font-semibold text-gray-700"
@@ -444,24 +419,19 @@ const EditProfile = () => {
                   type="text"
                   value={formData.state}
                   onChange={handleChange}
-                  placeholder="Enter your state"
-                  className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-ameltan focus:ring-2 focus:ring-ameltan/10"
                 />
-
               </div>
 
-              {/* MLT NUMBER NOTICE */}
+              {/* MLT NUMBER */}
 
               <div className="rounded-xl border border-ameltan/10 bg-ameltan/5 p-5">
-
                 <div className="flex gap-4">
-
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ameltan/10">
                     🔐
                   </div>
 
                   <div>
-
                     <h4 className="font-bold text-gray-900">
                       Professional Information
                     </h4>
@@ -472,21 +442,17 @@ const EditProfile = () => {
                       record and cannot be changed
                       from your profile.
                     </p>
-
                   </div>
-
                 </div>
-
               </div>
 
-              {/* ACTIONS */}
+              {/* BUTTONS */}
 
               <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-lg bg-ameltan px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-ameltan-dark hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex-1 rounded-lg bg-ameltan px-6 py-3.5 text-sm font-bold text-white transition hover:bg-ameltan-dark disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving
                     ? "Saving Changes..."
@@ -499,24 +465,20 @@ const EditProfile = () => {
                 >
                   Cancel
                 </Link>
-
               </div>
 
             </form>
-
           </div>
-
         </section>
 
         <p className="mt-6 text-center text-xs leading-5 text-gray-500">
-          Only your personal contact information can
-          be changed here.
+          Your MLT/MLA number cannot be changed from this page.
         </p>
 
       </div>
-
     </main>
   );
 };
 
 export default EditProfile;
+
