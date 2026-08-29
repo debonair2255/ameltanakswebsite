@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 
 const About = () => {
   const values = [
@@ -216,32 +217,34 @@ const About = () => {
         </div>
       </section>
 
-      {/* =========================
-          CALL TO ACTION
-      ========================= */}
-      <section className="w-full bg-ameltan py-16 sm:py-20 lg:py-24 rounded-lg">
-        <div className="mx-auto w-full max-w-5xl px-5 text-center sm:px-8">
+     {/* =========================
+    CALL TO ACTION
+========================= */}
 
-          <h2 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
-            Grow with the professional community.
-          </h2>
+{!isAuthenticated && (
+  <section className="w-full rounded-lg bg-ameltan py-16 sm:py-20 lg:py-24">
+    <div className="mx-auto w-full max-w-5xl px-5 text-center sm:px-8">
 
-          <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-white/80 sm:text-lg">
-            Connect with fellow professionals and take part in the
-            continued development of medical laboratory practice.
-          </p>
+      <h2 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
+        Grow with the professional community.
+      </h2>
 
-          <Link
-            to="/register"
-            className="mt-8 inline-flex items-center justify-center rounded-lg bg-white px-7 py-3.5 text-sm font-bold text-ameltan shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:text-base"
-          >
-            Join AMELTAN
-            <span className="ml-2">→</span>
-          </Link>
+      <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-white/80 sm:text-lg">
+        Connect with fellow professionals and take part in the
+        continued development of medical laboratory practice.
+      </p>
 
-        </div>
-      </section>
+      <Link
+        to="/register"
+        className="mt-8 inline-flex items-center justify-center rounded-lg bg-white px-7 py-3.5 text-sm font-bold text-ameltan shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:text-base"
+      >
+        Join AMELTAN
+        <span className="ml-2">→</span>
+      </Link>
 
+    </div>
+  </section>
+)}
     </main>
   );
 };

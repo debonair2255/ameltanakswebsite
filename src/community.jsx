@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 
 const Community = () => {
+  const { isAuthenticated } = useAuth();
+
   const communityAreas = [
     {
       title: "Professional Network",
@@ -309,28 +312,30 @@ const Community = () => {
       {/* =========================
           FINAL CTA
       ========================= */}
-      <section className="bg-ameltan py-16 sm:py-20">
-        <div className="mx-auto max-w-4xl px-5 text-center sm:px-8">
+      {!isAuthenticated && (
+        <section className="bg-ameltan py-16 sm:py-20">
+          <div className="mx-auto max-w-4xl px-5 text-center sm:px-8">
 
-          <h2 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
-            Your profession. Your community. Your future.
-          </h2>
+            <h2 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
+              Your profession. Your community. Your future.
+            </h2>
 
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">
-            Become part of a professional community committed to learning,
-            collaboration, and excellence.
-          </p>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">
+              Become part of a professional community committed to learning,
+              collaboration, and excellence.
+            </p>
 
-          <Link
-            to="/register"
-            className="mt-8 inline-flex items-center rounded-lg bg-white px-7 py-3.5 text-sm font-bold text-ameltan shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:text-base"
-          >
-            Join AMELTAN
-            <span className="ml-2">→</span>
-          </Link>
+            <Link
+              to="/register"
+              className="mt-8 inline-flex items-center rounded-lg bg-white px-7 py-3.5 text-sm font-bold text-ameltan shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:text-base"
+            >
+              Join AMELTAN
+              <span className="ml-2">→</span>
+            </Link>
 
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
     </main>
   );
