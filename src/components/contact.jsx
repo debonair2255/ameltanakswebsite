@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Contact = () => {
@@ -502,13 +503,13 @@ const Contact = () => {
               contribute to the continued growth of the profession.
             </p>
 
-            <a
-              href="/register"
+            <Link
+              to="/register"
               className="mt-8 inline-flex items-center rounded-lg bg-white px-7 py-3.5 text-sm font-bold text-ameltan shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:text-base"
             >
               Join AMELTAN
               <span className="ml-2">→</span>
-            </a>
+            </Link>
 
           </div>
         </section>
