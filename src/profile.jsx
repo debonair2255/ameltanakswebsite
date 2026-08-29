@@ -501,7 +501,7 @@ const Profile = () => {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
 
               <Link 
-              to ="/EditProfile"
+              to ="/edit-profile"
                
                 className="rounded-lg border border-gray-200 px-5 py-3 text-sm font-bold text-gray-700 transition hover:border-ameltan hover:text-ameltan"
               >
