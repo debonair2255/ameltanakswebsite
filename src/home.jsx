@@ -2,6 +2,9 @@ import Hero from "./components/hero";
 import { useAuth } from "./context/AuthContext";
 
 const Home = () => {
+  // Get authentication status from AuthContext
+  const { isAuthenticated } = useAuth();
+
   const features = [
     {
       title: "Professional Development",
@@ -134,45 +137,46 @@ const Home = () => {
           </div>
         </div>
       </section>
-{/* =========================
-    CALL TO ACTION
-    GUESTS ONLY
-========================= */}
 
-{!isAuthenticated && (
-  <section className="w-full bg-ameltan py-16 sm:py-20">
-    <div className="mx-auto w-full max-w-5xl px-5 text-center sm:px-8">
+      {/* =========================
+          CALL TO ACTION
+          GUESTS ONLY
+      ========================= */}
+      {!isAuthenticated && (
+        <section className="w-full bg-ameltan py-16 sm:py-20">
+          <div className="mx-auto w-full max-w-5xl px-5 text-center sm:px-8">
 
-      <h2 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
-        Be part of a stronger professional community.
-      </h2>
+            <h2 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
+              Be part of a stronger professional community.
+            </h2>
 
-      <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg">
-        Connect with fellow professionals, grow your skills, and
-        contribute to the advancement of medical laboratory practice.
-      </p>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg">
+              Connect with fellow professionals, grow your skills, and
+              contribute to the advancement of medical laboratory practice.
+            </p>
 
-      <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
 
-        <a
-          href="/register"
-          className="inline-flex items-center justify-center rounded-lg bg-white px-7 py-3.5 text-sm font-bold text-ameltan transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:text-base"
-        >
-          Join AMELTAN
-        </a>
+              <a
+                href="/register"
+                className="inline-flex items-center justify-center rounded-lg bg-white px-7 py-3.5 text-sm font-bold text-ameltan transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:text-base"
+              >
+                Join AMELTAN
+                <span className="ml-2">→</span>
+              </a>
 
-        <a
-          href="/contact"
-          className="inline-flex items-center justify-center rounded-lg border border-white/60 px-7 py-3.5 text-sm font-bold text-white transition-all duration-300 hover:bg-white hover:text-ameltan sm:text-base"
-        >
-          Contact Us
-        </a>
+              <a
+                href="/contact"
+                className="inline-flex items-center justify-center rounded-lg border border-white/60 px-7 py-3.5 text-sm font-bold text-white transition-all duration-300 hover:bg-white hover:text-ameltan sm:text-base"
+              >
+                Contact Us
+              </a>
 
-      </div>
+            </div>
 
-    </div>
-  </section>
-)}
+          </div>
+        </section>
+      )}
 
     </main>
   );
