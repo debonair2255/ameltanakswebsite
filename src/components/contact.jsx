@@ -47,99 +47,130 @@ const Contact = () => {
       const token = localStorage.getItem("token");
 
       // =================================================
-      // MEMBER REQUEST
-      // =================================================
-      // Do NOT send name/email/phone from the frontend.
-      // The backend gets them from the authenticated user.
+      // VALIDATE FORM
       // =================================================
 
-      if (isAuthenticated) {
-        if (!formData.subject || !formData.message) {
+      if (!formData.subject || !formData.message) {
+        setError(
+          "Please select a subject and enter your message."
+        );
+
+        setLoading(false);
+        return;
+      }
+
+      // =================================================
+      // BUILD REQUEST DATA
+      // =================================================
+      //
+      // MEMBER:
+      // Use account information automatically.
+      //
+      // GUEST:
+      // Use information entered in the form.
+      //
+      // =================================================
+
+      const payload = isAuthenticated
+        ? {
+            name: user?.name || "",
+            email: user?.email || "",
+            phone: user?.phone || "",
+            subject: formData.subject,
+            message: formData.message,
+          }
+        : {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            subject: formData.subject,
+            message: formData.message,
+          };
+
+      // =================================================
+      // GUEST VALIDATION
+      // =================================================
+
+      if (!isAuthenticated) {
+        if (
+          !formData.name.trim() ||
+          !formData.email.trim() ||
+          !formData.phone.trim()
+        ) {
           setError(
-            "Please select a subject and enter your message."
+            "Please complete your name, email and phone number."
           );
 
           setLoading(false);
           return;
-        }
-
-        const response = await fetch(
-          "http://localhost:10000/api/contact",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-
-           body: JSON.stringify({
-  name: user?.name || "",
-  email: user?.email || "",
-  phone: user?.phone || "",
-  subject: formData.subject,
-  message: formData.message,
-}),
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message ||
-              "Unable to send your message."
-          );
         }
       }
 
       // =================================================
-      // GUEST REQUEST
+      // MEMBER VALIDATION
       // =================================================
 
-      else {
+      if (isAuthenticated) {
         if (
-          !formData.name ||
-          !formData.email ||
-          !formData.phone ||
-          !formData.subject ||
-          !formData.message
+          !user?.name ||
+          !user?.email
         ) {
           setError(
-            "Please complete all required fields."
+            "Your account information could not be loaded. Please log in again."
           );
 
           setLoading(false);
           return;
         }
+      }
 
-        const response = await fetch(
-          "http://localhost:10000/api/contact",
-          {
-            method: "POST",
+      // =================================================
+      // REQUEST HEADERS
+      // =================================================
 
-            headers: {
-              "Content-Type": "application/json",
-            },
+      const headers = {
+        "Content-Type": "application/json",
+      };
 
-            body: JSON.stringify({
-              name: formData.name,
-              email: formData.email,
-              phone: formData.phone,
-              subject: formData.subject,
-              message: formData.message,
-            }),
-          }
-        );
+      // Only send Authorization header when a token exists
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
 
-        const data = await response.json();
+      // =================================================
+      // SEND MESSAGE
+      // =================================================
 
-        if (!response.ok) {
-          throw new Error(
-            data.message ||
-              "Unable to send your message."
-          );
+      const response = await fetch(
+        "http://localhost:10000/api/contact",
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
         }
+      );
+
+      // =================================================
+      // READ RESPONSE
+      // =================================================
+
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
+      // =================================================
+      // HANDLE SERVER ERROR
+      // =================================================
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            `Unable to send your message. Server returned ${response.status}.`
+        );
       }
 
       // =================================================
@@ -156,19 +187,31 @@ const Contact = () => {
         message: "",
       });
 
+      // Hide success message after 5 seconds
       setTimeout(() => {
         setSubmitted(false);
       }, 5000);
+
     } catch (err) {
       console.error(
         "Contact form error:",
         err
       );
 
-      setError(
-        err.message ||
-          "Something went wrong while sending your message."
-      );
+      // =================================================
+      // FAILED TO FETCH
+      // =================================================
+
+      if (err instanceof TypeError) {
+        setError(
+          "Unable to connect to the server. Please make sure the backend server is running on port 10000."
+        );
+      } else {
+        setError(
+          err.message ||
+            "Something went wrong while sending your message."
+        );
+      }
     } finally {
       setLoading(false);
     }
