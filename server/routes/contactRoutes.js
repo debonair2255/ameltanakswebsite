@@ -34,8 +34,7 @@ const optionalAuth = async (req, res, next) => {
       return next();
     }
 
-    const jwt = require("jsonwebtoken");
-
+    // JWT secret must exist
     if (!process.env.JWT_SECRET) {
       console.error(
         "JWT_SECRET is missing from environment variables."
@@ -43,43 +42,55 @@ const optionalAuth = async (req, res, next) => {
 
       return res.status(500).json({
         success: false,
-        message:
-          "Server authentication configuration error.",
+        message: "Server authentication configuration error.",
       });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
+    const jwt = require("jsonwebtoken");
 
-    const user = await User.findById(decoded.id).select(
-      "-password"
-    );
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET
+      );
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User account not found.",
-      });
+      const user = await User.findById(decoded.id).select(
+        "-password"
+      );
+
+      // Token is valid but user no longer exists
+      if (!user) {
+        req.user = null;
+        return next();
+      }
+
+      // Valid member
+      req.user = user;
+
+      return next();
+
+    } catch (tokenError) {
+      // Expired/invalid token → treat as guest
+      console.log(
+        "Contact form received invalid/expired token. Continuing as guest."
+      );
+
+      req.user = null;
+
+      return next();
     }
 
-    req.user = user;
-
-    next();
   } catch (error) {
     console.error(
       "Optional authentication error:",
       error
     );
 
-    return res.status(401).json({
-      success: false,
-      message: "Invalid or expired authentication token.",
-    });
+    req.user = null;
+
+    return next();
   }
 };
-
 /*
 =====================================================
 SEND CONTACT MESSAGE

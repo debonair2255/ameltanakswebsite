@@ -73,10 +73,13 @@ const Contact = () => {
               Authorization: `Bearer ${token}`,
             },
 
-            body: JSON.stringify({
-              subject: formData.subject,
-              message: formData.message,
-            }),
+           body: JSON.stringify({
+  name: user?.name || "",
+  email: user?.email || "",
+  phone: user?.phone || "",
+  subject: formData.subject,
+  message: formData.message,
+}),
           }
         );
 
