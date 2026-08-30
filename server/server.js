@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const contactRoutes = require("./routes/contactRoutes");
 
 dotenv.config();
 
@@ -48,7 +49,10 @@ app.use(
   "/api/auth",
   authRoutes
 );
-
+app.use(
+  "/api/contact",
+  contactRoutes
+);
 // =========================
 // ROOT ROUTE
 // =========================
@@ -85,3 +89,4 @@ app.listen(PORT, () => {
     `AMELTAN server running on port ${PORT}`
   );
 });
+
