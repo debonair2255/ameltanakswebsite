@@ -1,27 +1,34 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 
 const ContactMessage = require("../models/ContactMessage");
 const User = require("../models/User");
-const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 // =====================================================
 // OPTIONAL AUTHENTICATION MIDDLEWARE
 // =====================================================
-// If a token exists, identify the member.
-// If there is no token, continue as a guest.
 //
-// This allows BOTH:
-// Guest → submit contact message
-// Member → submit contact message using account details
+// Guest:
+// - No token required
+// - Can submit name, email, phone, subject and message
+//
+// Member:
+// - Token is checked automatically
+// - Name, email and phone are taken from the account
+//
 // =====================================================
 
 const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
-    // No token = guest
+    // -------------------------------------------------
+    // NO TOKEN
+    // Treat request as guest
+    // -------------------------------------------------
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       req.user = null;
       return next();
@@ -34,7 +41,10 @@ const optionalAuth = async (req, res, next) => {
       return next();
     }
 
-    // JWT secret must exist
+    // -------------------------------------------------
+    // CHECK JWT SECRET
+    // -------------------------------------------------
+
     if (!process.env.JWT_SECRET) {
       console.error(
         "JWT_SECRET is missing from environment variables."
@@ -46,13 +56,19 @@ const optionalAuth = async (req, res, next) => {
       });
     }
 
-    const jwt = require("jsonwebtoken");
+    // -------------------------------------------------
+    // VERIFY TOKEN
+    // -------------------------------------------------
 
     try {
       const decoded = jwt.verify(
         token,
         process.env.JWT_SECRET
       );
+
+      // -------------------------------------------------
+      // FIND USER
+      // -------------------------------------------------
 
       const user = await User.findById(decoded.id).select(
         "-password"
@@ -64,22 +80,19 @@ const optionalAuth = async (req, res, next) => {
         return next();
       }
 
-      // Valid member
+      // Valid authenticated member
       req.user = user;
 
       return next();
-
     } catch (tokenError) {
-      // Expired/invalid token → treat as guest
       console.log(
-        "Contact form received invalid/expired token. Continuing as guest."
+        "Invalid or expired contact form token. Treating request as guest."
       );
 
       req.user = null;
 
       return next();
     }
-
   } catch (error) {
     console.error(
       "Optional authentication error:",
@@ -91,35 +104,34 @@ const optionalAuth = async (req, res, next) => {
     return next();
   }
 };
-/*
-=====================================================
-SEND CONTACT MESSAGE
-POST /api/contact
-=====================================================
 
-GUEST:
-{
-  name,
-  email,
-  phone,
-  subject,
-  message
-}
-
-MEMBER:
-{
-  subject,
-  message
-}
-
-For members, the backend gets:
-name
-email
-phone
-
-directly from the authenticated account.
-=====================================================
-*/
+// =====================================================
+// SEND CONTACT MESSAGE
+// =====================================================
+//
+// POST /api/contact
+//
+// GUEST REQUEST:
+//
+// {
+//   name,
+//   email,
+//   phone,
+//   subject,
+//   message
+// }
+//
+// MEMBER REQUEST:
+//
+// {
+//   subject,
+//   message
+// }
+//
+// For members, name/email/phone are obtained from
+// the authenticated account.
+//
+// =====================================================
 
 router.post("/", optionalAuth, async (req, res) => {
   try {
@@ -140,9 +152,9 @@ router.post("/", optionalAuth, async (req, res) => {
       const memberEmail = req.user.email;
       const memberPhone = req.user.phone || "";
 
-      // -----------------------------
-      // Validate member message
-      // -----------------------------
+      // -------------------------------------------------
+      // VALIDATE MEMBER MESSAGE
+      // -------------------------------------------------
 
       if (!subject || !message) {
         return res.status(400).json({
@@ -152,8 +164,8 @@ router.post("/", optionalAuth, async (req, res) => {
         });
       }
 
-      const cleanSubject = subject.trim();
-      const cleanMessage = message.trim();
+      const cleanSubject = String(subject).trim();
+      const cleanMessage = String(message).trim();
 
       if (!cleanSubject || !cleanMessage) {
         return res.status(400).json({
@@ -163,26 +175,29 @@ router.post("/", optionalAuth, async (req, res) => {
         });
       }
 
-      // -----------------------------
-      // Save member message
-      // -----------------------------
+      // -------------------------------------------------
+      // SAVE MEMBER MESSAGE
+      // -------------------------------------------------
 
       const contactMessage =
         await ContactMessage.create({
           user: req.user._id,
-
           name: memberName,
           email: memberEmail,
           phone: memberPhone,
-
           subject: cleanSubject,
           message: cleanMessage,
         });
+
+      console.log(
+        `New member contact message from ${memberName}`
+      );
 
       return res.status(201).json({
         success: true,
         message:
           "Your message has been sent successfully.",
+
         contact: {
           id: contactMessage._id,
           subject: contactMessage.subject,
@@ -209,21 +224,25 @@ router.post("/", optionalAuth, async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // Clean guest information
-    // -----------------------------
+    // -------------------------------------------------
+    // CLEAN GUEST INFORMATION
+    // -------------------------------------------------
 
-    const cleanName = name.trim();
+    const cleanName = String(name).trim();
 
-    const cleanEmail = email
+    const cleanEmail = String(email)
       .trim()
       .toLowerCase();
 
-    const cleanPhone = phone.trim();
+    const cleanPhone = String(phone).trim();
 
-    const cleanSubject = subject.trim();
+    const cleanSubject = String(subject).trim();
 
-    const cleanMessage = message.trim();
+    const cleanMessage = String(message).trim();
+
+    // -------------------------------------------------
+    // CHECK EMPTY VALUES
+    // -------------------------------------------------
 
     if (
       !cleanName ||
@@ -239,9 +258,9 @@ router.post("/", optionalAuth, async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // Basic email validation
-    // -----------------------------
+    // -------------------------------------------------
+    // BASIC EMAIL VALIDATION
+    // -------------------------------------------------
 
     if (
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
@@ -250,30 +269,34 @@ router.post("/", optionalAuth, async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "Please provide a valid email address.",
+        message:
+          "Please provide a valid email address.",
       });
     }
 
-    // -----------------------------
-    // Save guest message
-    // -----------------------------
+    // -------------------------------------------------
+    // SAVE GUEST MESSAGE
+    // -------------------------------------------------
 
     const contactMessage =
       await ContactMessage.create({
         user: null,
-
         name: cleanName,
         email: cleanEmail,
         phone: cleanPhone,
-
         subject: cleanSubject,
         message: cleanMessage,
       });
+
+    console.log(
+      `New guest contact message from ${cleanName}`
+    );
 
     return res.status(201).json({
       success: true,
       message:
         "Your message has been sent successfully.",
+
       contact: {
         id: contactMessage._id,
         subject: contactMessage.subject,
@@ -295,3 +318,4 @@ router.post("/", optionalAuth, async (req, res) => {
 });
 
 module.exports = router;
+

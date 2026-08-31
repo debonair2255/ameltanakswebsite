@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
+    // =========================
+    // BASIC INFORMATION
+    // =========================
+
     name: {
       type: String,
       required: true,
@@ -22,11 +26,19 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
     },
 
+    // =========================
+    // USER ROLE
+    // =========================
+
     role: {
       type: String,
       enum: ["member", "admin"],
       default: "member",
     },
+
+    // =========================
+    // MLT NUMBER
+    // =========================
 
     mltNumber: {
       type: String,
@@ -37,17 +49,29 @@ const userSchema = new mongoose.Schema(
       match: /^MLT\d{5}$/,
     },
 
+    // =========================
+    // CONTACT INFORMATION
+    // =========================
+
     phone: {
       type: String,
       trim: true,
       default: "",
     },
 
+    // =========================
+    // STATE
+    // =========================
+
     state: {
       type: String,
       trim: true,
       default: "",
     },
+
+    // =========================
+    // MEMBERSHIP STATUS
+    // =========================
 
     membershipStatus: {
       type: String,
